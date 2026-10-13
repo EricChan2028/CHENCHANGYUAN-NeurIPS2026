@@ -1,0 +1,9 @@
+*
+!Dockerfile
+!requirements.txt
+!cpu_agent.py
+!LICENSE
+!vendor/
+!vendor/track3_runtime/
+!vendor/track3_runtime/**
+**/__pycache__

@@ -1,0 +1,104 @@
+diff --git a/abides-core/abides_core/kernel.py b/abides-core/abides_core/kernel.py
+index 9615cc8..31eeb8c 100644
+--- a/abides-core/abides_core/kernel.py
++++ b/abides-core/abides_core/kernel.py
+@@ -114,6 +114,15 @@ class Kernel:
+         # provided update_agent_state() method.
+         self.custom_state: Dict[str, Any] = {}
+ 
++        # --- Track-3 v2 instrumentation: message-level ledger for the enriched trace ---
++        # Captured deterministically at the send/deliver chokepoints (zero extra RNG) and
++        # surfaced in end_state (custom_state) for the fork adapter. The delivery seq is keyed by
++        # (message_id, recipient_id): a broadcast message carries ONE id but has N deliveries.
++        self._msg_ledger: List[Dict[str, Any]] = []
++        self._deliver_seq: int = 0
++        self._deliver_seq_by_key: Dict[Tuple[int, int], int] = {}
++        self._current_causal_uid: Optional[int] = None
++
+         # The kernel start and stop time (first and last timestamp in
+         # the simulation, separate from anything like exchange open/close).
+         self.start_time: NanosecondTime = start_time
+@@ -359,6 +368,27 @@ class Kernel:
+                 # of processing.
+                 self.agent_current_times[recipient_id] = self.current_time
+ 
++                # --- Track-3 v2 instrumentation: record wakeup delivery + causal root ---
++                # Logged on FINAL delivery only (after the requeue guard) so requeued wakeups
++                # are not double-counted. The wakeup becomes the causal parent of any orders
++                # the agent sends in response (the endogenous wakeup->order edge).
++                self._current_causal_uid = message.message_id
++                self._deliver_seq_by_key[(message.message_id, recipient_id)] = self._deliver_seq
++                self._deliver_seq += 1
++                self._msg_ledger.append(
++                    {
++                        "message_id": message.message_id,
++                        "src_id": recipient_id,
++                        "dst_id": recipient_id,
++                        "t_send_ns": None,
++                        "t_recv_ns": self.current_time,
++                        "latency_ns": 0,
++                        "msg_type": "AGENT_WAKEUP",
++                        "order_id": None,
++                        "causal_parent": None,
++                    }
++                )
++
+                 # Wake the agent and get value passed to kernel to listen for kernel interruption signal
+                 wakeup_result = self.agents[recipient_id].wakeup(self.current_time)
+ 
+@@ -424,6 +454,14 @@ class Kernel:
+                             )
+                         )
+ 
++                    # --- Track-3 v2 instrumentation: delivery order + causal parent ---
++                    # This message becomes the causal parent of anything the agent sends
++                    # while processing it (fill->aggressor, ack->submit), and its processing
++                    # position is the faithful per-message seq.
++                    self._current_causal_uid = message.message_id
++                    self._deliver_seq_by_key[(message.message_id, recipient_id)] = self._deliver_seq
++                    self._deliver_seq += 1
++
+                     self.agents[recipient_id].receive_message(
+                         self.current_time, sender_id, message
+                     )
+@@ -492,6 +530,12 @@ class Kernel:
+         )
+         self.custom_state["agents"] = self.agents
+ 
++        # --- Track-3 v2 instrumentation: surface the message ledger for the fork adapter ---
++        # end_state["message_ledger"] is a list of per-message dicts; deliver_seq_by_key maps
++        # (message_id, recipient_id) -> faithful kernel processing order (g3 event-order source).
++        self.custom_state["message_ledger"] = self._msg_ledger
++        self.custom_state["deliver_seq_by_key"] = self._deliver_seq_by_key
++
+         # Agents will request the Kernel to serialize their agent logs, usually
+         # during kernel_terminating, but the Kernel must write out the summary
+         # log itself.
+@@ -606,6 +650,27 @@ class Kernel:
+         # Finally drop the message in the queue with priority == delivery time.
+         self.messages.put((deliver_at, (sender_id, recipient_id, message)))
+ 
++        # --- Track-3 v2 instrumentation: record per-(sub)message network metadata ---
++        # latency_ns := deliver_at - sent_time is the realized integer latency (incl. noise),
++        # so the invariant t_recv_ns - t_send_ns == latency_ns holds by construction. A
++        # MessageBatch fans out to its sub-messages, all sharing this one send/latency draw.
++        _ledger_msgs = message.messages if isinstance(message, MessageBatch) else [message]
++        for _lm in _ledger_msgs:
++            _ord = getattr(_lm, "order", None)
++            self._msg_ledger.append(
++                {
++                    "message_id": _lm.message_id,
++                    "src_id": sender_id,
++                    "dst_id": recipient_id,
++                    "t_send_ns": sent_time,
++                    "t_recv_ns": deliver_at,
++                    "latency_ns": deliver_at - sent_time,
++                    "msg_type": _lm.type(),
++                    "order_id": getattr(_ord, "order_id", None),
++                    "causal_parent": self._current_causal_uid,
++                }
++            )
++
+         if self.show_trace_messages:
+             logger.debug(
+                 "Sent time: {}, current time {}, computation delay {}".format(

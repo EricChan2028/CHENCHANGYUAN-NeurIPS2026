@@ -1,0 +1,7 @@
+# Executive summary: permit only the files required to build the CPU image.
+*
+!Dockerfile
+!requirements.txt
+!forecast.py
+!LICENSE
+!PROVENANCE.md

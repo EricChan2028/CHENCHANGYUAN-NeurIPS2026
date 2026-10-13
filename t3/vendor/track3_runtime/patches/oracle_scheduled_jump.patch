@@ -1,0 +1,20 @@
+diff --git a/abides-markets/abides_markets/oracles/sparse_mean_reverting_oracle.py b/abides-markets/abides_markets/oracles/sparse_mean_reverting_oracle.py
+index 24e7379..8f828bc 100644
+--- a/abides-markets/abides_markets/oracles/sparse_mean_reverting_oracle.py
++++ b/abides-markets/abides_markets/oracles/sparse_mean_reverting_oracle.py
+@@ -149,6 +149,15 @@ class SparseMeanRevertingOracle(MeanRevertingOracle):
+         # For our purposes, the value must be rounded and converted to integer cents.
+         v = int(round(v))
+ 
++        # Track-3 reactive-agent intervention: apply a scheduled DETERMINISTIC fundamental jump ONCE,
++        # when the series first advances to/after its time_ns. RNG-neutral (the random Poisson
++        # megashocks are untouched), so a baseline (no jump) and an intervention run share identical
++        # pre-jump draws and diverge only after the shock. Absent -> legacy behavior unchanged.
++        for jump in s.get("scheduled_jumps", []):
++            if not jump.get("_consumed") and ts >= jump["time_ns"]:
++                v = max(0, v + int(jump["magnitude"]))
++                jump["_consumed"] = True
++
+         # Cache the new time and value as the "previous" fundamental values.
+         self.r[symbol] = (ts, v)
+ 

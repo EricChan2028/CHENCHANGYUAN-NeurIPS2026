@@ -1,0 +1,12 @@
+.ci/
+.secrets/
+private/
+.env*
+**/.venv/
+**/__pycache__/
+**/output/
+**/outputs/
+**/runs/
+deployment/artifacts/
+*.zip
+*.tar.gz

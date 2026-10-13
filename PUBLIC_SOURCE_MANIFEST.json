@@ -1,0 +1,182 @@
+{
+  "files": {
+    ".github/workflows/cpu-build.yml": {
+      "bytes": 3866,
+      "sha256": "5a6ad176a416684f5eece482f1a2a7b5c31af57d9d772e87e60084c3150de852"
+    },
+    ".gitignore": {
+      "bytes": 125,
+      "sha256": "4a0263609b68efa383c51ff75bb21ac056fabbd3074931da13f62eaede3cb97b"
+    },
+    "README.md": {
+      "bytes": 6493,
+      "sha256": "2dc2de1271ffa0fedf59dec16a001b88bc70846e2ad61c4258a151b7e280554c"
+    },
+    "deployment/README.md": {
+      "bytes": 6493,
+      "sha256": "2dc2de1271ffa0fedf59dec16a001b88bc70846e2ad61c4258a151b7e280554c"
+    },
+    "deployment/container_smoke.py": {
+      "bytes": 11702,
+      "sha256": "50b94121469f0155dc2808181b9351cda36fd8d36114914d271c055802e13abd"
+    },
+    "deployment/cpu-build.yml": {
+      "bytes": 3866,
+      "sha256": "5a6ad176a416684f5eece482f1a2a7b5c31af57d9d772e87e60084c3150de852"
+    },
+    "deployment/public-gitignore": {
+      "bytes": 125,
+      "sha256": "4a0263609b68efa383c51ff75bb21ac056fabbd3074931da13f62eaede3cb97b"
+    },
+    "deployment/public-source-files.json": {
+      "bytes": 5088,
+      "sha256": "2152e8acf7da93910207cf557bc78e760ba611fb403886cc23e90dc05ae8e101"
+    },
+    "deployment/validator-requirements.txt": {
+      "bytes": 199,
+      "sha256": "ac61bd229fa526534615c7982059af9be9159a332ba0e7a65525ca885137d089"
+    },
+    "deployment/verify_public_image.py": {
+      "bytes": 4437,
+      "sha256": "8bcca9d1966eba2b3869ad2bcb5567928692d2190637874e618260efd7dd82e4"
+    },
+    "t2/.dockerignore": {
+      "bytes": 145,
+      "sha256": "66b71b786b5c78b5aa92c712d65933abfd11bfb28ebaa581fe3fd40005169e60"
+    },
+    "t2/Dockerfile": {
+      "bytes": 757,
+      "sha256": "4405c84b439fd3a00dbbac9229ecc96b95e2784a42b3e392ecbf8bb6e14ef446"
+    },
+    "t2/LICENSE": {
+      "bytes": 1071,
+      "sha256": "72a6dae8870cbcd35329ff906cf00959bc027cb75200495df3a297c737c3d190"
+    },
+    "t2/PROVENANCE.md": {
+      "bytes": 1076,
+      "sha256": "c48b6b1bd1ff4df1dd5d2cc0ded43b97029604fefec969bda746bba546715d2a"
+    },
+    "t2/README.md": {
+      "bytes": 5546,
+      "sha256": "6183422cd0f8ef3415c31936c5e89c01030c9f4ee68f7c5b803f333e31c63b1f"
+    },
+    "t2/create_fixture.py": {
+      "bytes": 1759,
+      "sha256": "eae82ff4fece5d57d7a961efbd955ec0356d6b86cf33a3edee81a2221a4c958f"
+    },
+    "t2/evaluate.py": {
+      "bytes": 14133,
+      "sha256": "1485096c31a2268ab165a7cbaeb46410fb7f135203e2902ae73e2c0bce09b74d"
+    },
+    "t2/forecast.py": {
+      "bytes": 16863,
+      "sha256": "77ff516b9b6fd88ebe6222970646c7fc2de2510cafec986e58c9326249a17a9f"
+    },
+    "t2/requirements.txt": {
+      "bytes": 405,
+      "sha256": "45a640d7a634bfe814b6eabdbc49fb6dfd2ecbdac4d2e9c95a0b0d1dcf122ff6"
+    },
+    "t2/test_forecast.py": {
+      "bytes": 4490,
+      "sha256": "cd39cab070ff5539ee0082ba48f6aa617f183d6df92a75b8108da6942184eb0e"
+    },
+    "t3/.dockerignore": {
+      "bytes": 129,
+      "sha256": "1636b353b26a5ab0756bf12c0a438816483d8d762769142bead2e72bfe18a75f"
+    },
+    "t3/Dockerfile": {
+      "bytes": 1221,
+      "sha256": "fb9aed93326305503025d1a4668497fc2d573f043a6ffac41bc505f74a492cd6"
+    },
+    "t3/LICENSE": {
+      "bytes": 1071,
+      "sha256": "72a6dae8870cbcd35329ff906cf00959bc027cb75200495df3a297c737c3d190"
+    },
+    "t3/README.md": {
+      "bytes": 5892,
+      "sha256": "a13f515d8ca02998a0e27cba3aafa7485b03ac69ef9792310941fe97a4fbf440"
+    },
+    "t3/benchmark_local.py": {
+      "bytes": 2899,
+      "sha256": "2f8481aaa79c311a989be4591b112f2b0982d3a1defb98b94a42198bd1f2fdad"
+    },
+    "t3/cpu_agent.py": {
+      "bytes": 11170,
+      "sha256": "2a58e80cb2a502817e38420995fe700da4737e05c81ce510ba495514226ad309"
+    },
+    "t3/requirements.txt": {
+      "bytes": 92,
+      "sha256": "2932a0ee04a18a73a2bf268ef72343c5f275aed9127cf30c908005de7e3e2d48"
+    },
+    "t3/smoke_test.py": {
+      "bytes": 4155,
+      "sha256": "88bdaa7e197e6e5978f3f893d62b95b5194ab6c5fbad21fe23808c5b50bce391"
+    },
+    "t3/vendor/track3_runtime/ABIDES-LICENSE": {
+      "bytes": 1554,
+      "sha256": "228e549b0a65633ed0c3fb633e37d5cc41d037c8fd952dd75d9b826edde5ea0e"
+    },
+    "t3/vendor/track3_runtime/LICENSE": {
+      "bytes": 1055,
+      "sha256": "9eb6f69d48a1dd764e8a33f14a584f460d3cec653477c136a95dd6df9c249211"
+    },
+    "t3/vendor/track3_runtime/abides_fork/__init__.py": {
+      "bytes": 839,
+      "sha256": "da0d05b121efbab7fd8bbd72c3a52e2ff4fa3d392afe45e423c0b2529a23943f"
+    },
+    "t3/vendor/track3_runtime/abides_fork/agents.py": {
+      "bytes": 10019,
+      "sha256": "48692d58dec8a8159278a5386655764e50ef2da496f80551e3457eeb252ecd11"
+    },
+    "t3/vendor/track3_runtime/abides_fork/config.py": {
+      "bytes": 13409,
+      "sha256": "7f9ea65be9d0a935eef4dfe337740506e49e66355e429d4c6fe77fa32bfd80a5"
+    },
+    "t3/vendor/track3_runtime/abides_fork/scenario_io.py": {
+      "bytes": 2664,
+      "sha256": "b95ac1c31f37586e5c70e91714a58574086f6ff76c06befecb37f1aca9322312"
+    },
+    "t3/vendor/track3_runtime/abides_fork/simulate.py": {
+      "bytes": 5418,
+      "sha256": "f9d9fdf8cfdcd3d69bf3d5106ab5c13aa25779c955bf78339dfcf7ac01138c88"
+    },
+    "t3/vendor/track3_runtime/abides_fork/simulate_batch.py": {
+      "bytes": 4801,
+      "sha256": "4ca38646f2b5a581e634db94a992e4c1f9404b3e6aeccc3b180b551e17579bdf"
+    },
+    "t3/vendor/track3_runtime/abides_fork/trace.py": {
+      "bytes": 11241,
+      "sha256": "13c1b1b03053bdd6c875066e7ba392323118b5e20f50987aab13ccbd5db54856"
+    },
+    "t3/vendor/track3_runtime/patches/exchange_protocol_stp.patch": {
+      "bytes": 4085,
+      "sha256": "445ba52a340e16ecba89dc0243b7df2f78a29d582e47ec689a07a98e3035e001"
+    },
+    "t3/vendor/track3_runtime/patches/kernel_message_ledger.patch": {
+      "bytes": 5633,
+      "sha256": "ae0712c7c9edbbafbb6900791129c348e1c697a7629d23efecdccd7d99ead4cb"
+    },
+    "t3/vendor/track3_runtime/patches/oracle_scheduled_jump.patch": {
+      "bytes": 1280,
+      "sha256": "1c094e4b4a2e3cdaad27ad58878cc5cf394972254e9ecebeca1e07521de9b2c8"
+    },
+    "t3/vendor/track3_runtime/patches/order_size_model.pomegranate-free.patch": {
+      "bytes": 2395,
+      "sha256": "bd840b9ccc6377ed81c7a84a5e063d8381fa6b8a333afbe993c8f0a913081108"
+    },
+    "t3/verify_batch.py": {
+      "bytes": 2980,
+      "sha256": "85487b5802aeb3cead89ac41b9b8a4e09439945b7b22d23e094f1efd09c66242"
+    },
+    "t3/verify_public.py": {
+      "bytes": 4228,
+      "sha256": "92cb1853f493ec9a804d4515bff54a3d5e49a4523fffcd133c31fc2674af5872"
+    },
+    "tools/prepare_public_source.py": {
+      "bytes": 5184,
+      "sha256": "b2dbe92b93ba0a1c669fa8b12be85f722a2a9211f8964c93eb4f5e47eecf1549"
+    }
+  },
+  "format_version": 1,
+  "purpose": "Reviewed public source only; no submission ZIP or credentials"
+}

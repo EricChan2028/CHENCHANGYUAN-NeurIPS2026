@@ -1,0 +1,53 @@
+diff --git a/abides-markets/abides_markets/models/order_size_model.py b/abides-markets/abides_markets/models/order_size_model.py
+index 2cbb39c..7dfdf0a 100644
+--- a/abides-markets/abides_markets/models/order_size_model.py
++++ b/abides-markets/abides_markets/models/order_size_model.py
+@@ -1,7 +1,4 @@
+-import json
+-
+ import numpy as np
+-from pomegranate import GeneralMixtureModel
+ 
+ 
+ order_size = {
+@@ -90,9 +87,38 @@ order_size = {
+ }
+ 
+ 
++# NOTE (Agenthon Track 3 fork): the upstream model used pomegranate's
++# GeneralMixtureModel, which is unmaintained and does not build on Python 3.11.
++# This is a drop-in NumPy reimplementation that samples from exactly the same
++# fixed mixture defined in `order_size` above (one LogNormal component plus ten
++# frozen Normal components), preserving the public interface and determinism.
+ class OrderSizeModel:
++    _NAME_TO_KIND = {
++        "LogNormalDistribution": "lognormal",
++        "NormalDistribution": "normal",
++    }
++
+     def __init__(self) -> None:
+-        self.model = GeneralMixtureModel.from_json(json.dumps(order_size))
++        weights = np.asarray(order_size["weights"], dtype=float)
++        self._weights = weights / weights.sum()
++        self._kinds: list[str] = []
++        self._params: list[tuple[float, float]] = []
++        for dist in order_size["distributions"]:
++            kind = self._NAME_TO_KIND.get(dist["name"])
++            if kind is None:
++                raise ValueError(f"unsupported distribution: {dist['name']}")
++            a, b = dist["parameters"][0], dist["parameters"][1]
++            self._kinds.append(kind)
++            self._params.append((float(a), float(b)))
+ 
+     def sample(self, random_state: np.random.RandomState) -> float:
+-        return round(self.model.sample(random_state=random_state))
++        idx = random_state.choice(len(self._weights), p=self._weights)
++        kind = self._kinds[idx]
++        a, b = self._params[idx]
++        # pomegranate LogNormalDistribution(mu, sigma): log(x) ~ Normal(mu, sigma);
++        # numpy lognormal(mean, sigma) draws exp(Normal(mean, sigma)) -- equivalent.
++        if kind == "lognormal":
++            value = random_state.lognormal(mean=a, sigma=b)
++        else:  # NormalDistribution(mean, std)
++            value = random_state.normal(loc=a, scale=b)
++        return round(value)

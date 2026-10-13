@@ -1,0 +1,96 @@
+# Eastern Eagles CPU market simulator
+
+This candidate runs the genuine pinned ABIDES market simulator entirely on CPU. It
+preserves market and agent behavior while replacing scalar latency clipping and
+projecting logs directly into the required trace columns. Independent batch markets
+run in at most four separate processes. No reference trace, pretrained model, API,
+GPU library or network request is used during simulation.
+
+The implementation is an initial measured candidate. Local tests do not establish an
+official rank, final admissibility or comparable performance on the organizer fleet.
+
+## Local setup
+
+The separate `.venv` uses Python 3.11 and the exact official numerical stack. The
+campaign's parent `.venv` uses Python 3.13 for the official scoring toolkit; they must
+remain separate because the ABIDES baseline requires pandas 1.5.3.
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+git clone https://github.com/jpmorganchase/abides-jpmc-public.git vendor/abides
+git -C vendor/abides checkout f9cbe51342b7dedd9587e4e069040d68a5c6477f
+git -C vendor/abides apply ../track3_runtime/patches/order_size_model.pomegranate-free.patch
+git -C vendor/abides apply ../track3_runtime/patches/kernel_message_ledger.patch
+git -C vendor/abides apply ../track3_runtime/patches/exchange_protocol_stp.patch
+git -C vendor/abides apply ../track3_runtime/patches/oracle_scheduled_jump.patch
+.\.venv\Scripts\python.exe -m pip install --no-deps vendor/abides/abides-core vendor/abides/abides-markets
+.\.venv\Scripts\python.exe smoke_test.py
+```
+
+On Windows, the runner makes the upstream duration conversion explicitly int64.
+The upstream NumPy 1.x `astype(int)` uses Windows' 32-bit C integer and otherwise
+overflows durations above 2.1 seconds. This local compatibility adjustment matches
+Linux's int64 result. Linux submissions do not apply this adjustment.
+
+## Running and testing
+
+```powershell
+.\.venv\Scripts\python.exe cpu_agent.py simulate --config <scenario.json> --out <output/trace.parquet>
+.\.venv\Scripts\python.exe cpu_agent.py simulate-batch --batch-dir <scenarios> --out-dir <output> --workers 4
+.\.venv\Scripts\python.exe verify_public.py --upstream 'D:\NeurIPS Challenge\upstream-t3' --output runs/public --report ../reports/t3-public-exact.json --workers 2
+.\.venv\Scripts\python.exe verify_batch.py --upstream 'D:\NeurIPS Challenge\upstream-t3' --output runs/public-batch --report ../reports/t3-public-batch.json --workers 2
+.\.venv\Scripts\python.exe benchmark_local.py --config <scenario.json> --output runs/benchmark --report ../reports/t3-local-benchmark.json --repeats 3
+```
+
+`smoke_test.py` compares 40,000 latency draws against the original implementation,
+then executes three new synthetic markets with all four agent types, stochastic
+latencies, self-trade prevention and a scheduled shock. It compares candidate and
+baseline traces and ledgers, checks repeat byte stability, and checks two-process
+batch isolation. The baseline computes outputs at test time.
+
+`verify_public.py` and `verify_batch.py` compare every table cell, column dtype and row count against
+frozen **public** traces and ledgers. This is stricter than approximate table
+comparison, but does not replace the official Linux container/scoring tests.
+`benchmark_local.py` alternates baseline/candidate order, includes Python startup in
+process timing, and requires identical stable output bytes across all timed runs.
+
+The official `qfbench2 smoke` manifest verifier refuses Windows because the required
+`O_NOFOLLOW` and `O_DIRECTORY` facilities are unavailable. Its checks are retained
+unchanged. Run official gates on Linux (the campaign's GitHub Actions workflow is
+prepared for that), before treating the image as submission-ready.
+
+## Container
+
+```text
+docker build --platform linux/amd64 -t eastern-eagles-t3:local t3
+docker run --rm --network none --cpus 4 --memory 16g --read-only --tmpfs /tmp:rw,size=64m -v <unit>:/input:ro -v <output>:/output eastern-eagles-t3:local simulate --config /input/scenario.json --out /output/trace.parquet
+```
+
+Build context is `t3/`. The `.dockerignore` whitelist permits only the runtime,
+dependency list and official adapter/patch sources. It excludes local runs, reference
+data, the Python environment, development tools and the ABIDES checkout. The build
+fetches the pinned public ABIDES commit and applies the four official overlays.
+The image has no Docker `VOLUME`. It writes Snappy Parquet and honest timing sidecars;
+the organizer's externally measured time, not these sidecars, determines ranking.
+
+## Provenance
+
+- Participant code: `cpu_agent.py`, `smoke_test.py`, `verify_public.py`, `verify_batch.py`,
+  `benchmark_local.py`, Docker packaging and this README; Eastern Eagles, Team 773.
+- Official Track 3 adapter/patch source: public repository commit
+  `fe32378d92b9767a0452c8fbb9911dcf722a8c87` from
+  https://github.com/Agenthon-2026/track3-simulation-public, MIT license retained in
+  `vendor/track3_runtime/LICENSE`.
+- ABIDES upstream: https://github.com/jpmorganchase/abides-jpmc-public, commit
+  `f9cbe51342b7dedd9587e4e069040d68a5c6477f`, BSD-3-Clause. Its license is retained
+  in the image as `vendor/track3_runtime/ABIDES-LICENSE`.
+- The four organizer overlays are applied in the Dockerfile's documented order.
+- No learned model, external training data, private evaluation data or paid service
+  is included. Public reference data is used only by external local verification.
+- The base Python image tag remains floating until the campaign build workflow
+  resolves and records the final immutable image digest. No image digest is invented.
+
+Next optimization candidates come from profiling, especially pure timestamp
+formatting, per-event copying and the single-threaded priority queue. Preserve exact
+RNG draws and event ordering, and verify each change separately before adoption.

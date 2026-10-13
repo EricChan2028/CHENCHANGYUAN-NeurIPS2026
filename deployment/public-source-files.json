@@ -1,0 +1,181 @@
+{
+  "format_version": 1,
+  "files": [
+    {
+      "source": "deployment/README.md",
+      "destination": "deployment/README.md"
+    },
+    {
+      "source": "deployment/cpu-build.yml",
+      "destination": "deployment/cpu-build.yml"
+    },
+    {
+      "source": "deployment/container_smoke.py",
+      "destination": "deployment/container_smoke.py"
+    },
+    {
+      "source": "deployment/verify_public_image.py",
+      "destination": "deployment/verify_public_image.py"
+    },
+    {
+      "source": "deployment/validator-requirements.txt",
+      "destination": "deployment/validator-requirements.txt"
+    },
+    {
+      "source": "deployment/public-source-files.json",
+      "destination": "deployment/public-source-files.json"
+    },
+    {
+      "source": "deployment/public-gitignore",
+      "destination": "deployment/public-gitignore"
+    },
+    {
+      "source": "tools/prepare_public_source.py",
+      "destination": "tools/prepare_public_source.py"
+    },
+    {
+      "source": "t2/.dockerignore",
+      "destination": "t2/.dockerignore"
+    },
+    {
+      "source": "t2/create_fixture.py",
+      "destination": "t2/create_fixture.py"
+    },
+    {
+      "source": "t2/Dockerfile",
+      "destination": "t2/Dockerfile"
+    },
+    {
+      "source": "t2/evaluate.py",
+      "destination": "t2/evaluate.py"
+    },
+    {
+      "source": "t2/forecast.py",
+      "destination": "t2/forecast.py"
+    },
+    {
+      "source": "t2/LICENSE",
+      "destination": "t2/LICENSE"
+    },
+    {
+      "source": "t2/PROVENANCE.md",
+      "destination": "t2/PROVENANCE.md"
+    },
+    {
+      "source": "t2/README.md",
+      "destination": "t2/README.md"
+    },
+    {
+      "source": "t2/requirements.txt",
+      "destination": "t2/requirements.txt"
+    },
+    {
+      "source": "t2/test_forecast.py",
+      "destination": "t2/test_forecast.py"
+    },
+    {
+      "source": "t3/.dockerignore",
+      "destination": "t3/.dockerignore"
+    },
+    {
+      "source": "t3/benchmark_local.py",
+      "destination": "t3/benchmark_local.py"
+    },
+    {
+      "source": "t3/cpu_agent.py",
+      "destination": "t3/cpu_agent.py"
+    },
+    {
+      "source": "t3/Dockerfile",
+      "destination": "t3/Dockerfile"
+    },
+    {
+      "source": "t3/LICENSE",
+      "destination": "t3/LICENSE"
+    },
+    {
+      "source": "t3/README.md",
+      "destination": "t3/README.md"
+    },
+    {
+      "source": "t3/requirements.txt",
+      "destination": "t3/requirements.txt"
+    },
+    {
+      "source": "t3/smoke_test.py",
+      "destination": "t3/smoke_test.py"
+    },
+    {
+      "source": "t3/verify_batch.py",
+      "destination": "t3/verify_batch.py"
+    },
+    {
+      "source": "t3/verify_public.py",
+      "destination": "t3/verify_public.py"
+    },
+    {
+      "source": "t3/vendor/track3_runtime/LICENSE",
+      "destination": "t3/vendor/track3_runtime/LICENSE"
+    },
+    {
+      "source": "t3/vendor/track3_runtime/ABIDES-LICENSE",
+      "destination": "t3/vendor/track3_runtime/ABIDES-LICENSE"
+    },
+    {
+      "source": "t3/vendor/track3_runtime/abides_fork/__init__.py",
+      "destination": "t3/vendor/track3_runtime/abides_fork/__init__.py"
+    },
+    {
+      "source": "t3/vendor/track3_runtime/abides_fork/trace.py",
+      "destination": "t3/vendor/track3_runtime/abides_fork/trace.py"
+    },
+    {
+      "source": "t3/vendor/track3_runtime/abides_fork/simulate_batch.py",
+      "destination": "t3/vendor/track3_runtime/abides_fork/simulate_batch.py"
+    },
+    {
+      "source": "t3/vendor/track3_runtime/abides_fork/simulate.py",
+      "destination": "t3/vendor/track3_runtime/abides_fork/simulate.py"
+    },
+    {
+      "source": "t3/vendor/track3_runtime/abides_fork/scenario_io.py",
+      "destination": "t3/vendor/track3_runtime/abides_fork/scenario_io.py"
+    },
+    {
+      "source": "t3/vendor/track3_runtime/abides_fork/config.py",
+      "destination": "t3/vendor/track3_runtime/abides_fork/config.py"
+    },
+    {
+      "source": "t3/vendor/track3_runtime/abides_fork/agents.py",
+      "destination": "t3/vendor/track3_runtime/abides_fork/agents.py"
+    },
+    {
+      "source": "t3/vendor/track3_runtime/patches/order_size_model.pomegranate-free.patch",
+      "destination": "t3/vendor/track3_runtime/patches/order_size_model.pomegranate-free.patch"
+    },
+    {
+      "source": "t3/vendor/track3_runtime/patches/oracle_scheduled_jump.patch",
+      "destination": "t3/vendor/track3_runtime/patches/oracle_scheduled_jump.patch"
+    },
+    {
+      "source": "t3/vendor/track3_runtime/patches/kernel_message_ledger.patch",
+      "destination": "t3/vendor/track3_runtime/patches/kernel_message_ledger.patch"
+    },
+    {
+      "source": "t3/vendor/track3_runtime/patches/exchange_protocol_stp.patch",
+      "destination": "t3/vendor/track3_runtime/patches/exchange_protocol_stp.patch"
+    },
+    {
+      "source": "deployment/cpu-build.yml",
+      "destination": ".github/workflows/cpu-build.yml"
+    },
+    {
+      "source": "deployment/README.md",
+      "destination": "README.md"
+    },
+    {
+      "source": "deployment/public-gitignore",
+      "destination": ".gitignore"
+    }
+  ]
+}

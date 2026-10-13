@@ -1,0 +1,6 @@
+numpy==1.26.4
+pandas==1.5.3
+scipy==1.17.1
+pyarrow==15.0.2
+coloredlogs==15.0.1
+psutil==7.0.0

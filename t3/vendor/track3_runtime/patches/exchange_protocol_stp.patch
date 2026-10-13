@@ -1,0 +1,77 @@
+diff --git a/abides-markets/abides_markets/agents/exchange_agent.py b/abides-markets/abides_markets/agents/exchange_agent.py
+index 0e8db67..c6e3e18 100644
+--- a/abides-markets/abides_markets/agents/exchange_agent.py
++++ b/abides-markets/abides_markets/agents/exchange_agent.py
+@@ -156,6 +156,7 @@ class ExchangeAgent(FinancialAgent):
+         stream_history: int = 0,
+         log_orders: bool = False,
+         use_metric_tracker: bool = True,
++        stp_policy: Optional[str] = None,
+     ) -> None:
+         super().__init__(id, name, type, random_state)
+ 
+@@ -177,6 +178,11 @@ class ExchangeAgent(FinancialAgent):
+         # Computation delay is applied on every wakeup call or message received.
+         self.computation_delay: int = computation_delay
+ 
++        # Self-trade-prevention policy (opt-in; None = disabled = legacy behavior). When set to
++        # "cancel_newest" / "cancel_oldest", the order book prevents an agent from matching its own
++        # resting order. Read by OrderBook via self.owner.stp_policy. Track-3 exchange-protocol family.
++        self.stp_policy: Optional[str] = stp_policy
++
+         # The exchange maintains an order stream of all orders leading to the last L trades
+         # to support certain agents from the auction literature (GD, HBL, etc).
+         self.stream_history: int = stream_history
+diff --git a/abides-markets/abides_markets/order_book.py b/abides-markets/abides_markets/order_book.py
+index a326dbe..6ba7274 100644
+--- a/abides-markets/abides_markets/order_book.py
++++ b/abides-markets/abides_markets/order_book.py
+@@ -107,6 +107,27 @@ class OrderBook:
+         executed: List[Tuple[int, int]] = []
+ 
+         while True:
++            # Self-trade prevention (opt-in via ExchangeAgent.stp_policy; None = legacy no-op).
++            # Prevents an agent from matching its own resting order at the best crossable level.
++            stp_policy = getattr(self.owner, "stp_policy", None)
++            if stp_policy:
++                opp = self.asks if order.side.is_bid() else self.bids
++                if opp and opp[0].order_is_match(order):
++                    resting = opp[0].peek()[0]
++                    if resting.agent_id == order.agent_id:
++                        if stp_policy == "cancel_oldest" and self.cancel_order(
++                            resting, quiet=quiet
++                        ):
++                            # Cancel the resting same-agent order; re-attempt against the next level.
++                            continue
++                        if stp_policy != "cancel_oldest":
++                            # cancel_newest (default): cancel the incoming aggressor's remainder.
++                            if not quiet:
++                                self.owner.send_message(
++                                    order.agent_id, OrderCancelledMsg(deepcopy(order))
++                                )
++                            break
++
+             matched_order = self.execute_order(order)
+ 
+             if matched_order is not None:
+@@ -188,6 +209,20 @@ class OrderBook:
+         order = deepcopy(order)
+ 
+         while order.quantity > 0:
++            # Self-trade prevention (opt-in; see handle_limit_order). Market orders match any resting
++            # order, so only the same-agent check at the best level is needed.
++            stp_policy = getattr(self.owner, "stp_policy", None)
++            if stp_policy:
++                opp = self.asks if order.side.is_bid() else self.bids
++                if opp and opp[0].peek()[0].agent_id == order.agent_id:
++                    if stp_policy == "cancel_oldest" and self.cancel_order(opp[0].peek()[0]):
++                        continue
++                    if stp_policy != "cancel_oldest":
++                        self.owner.send_message(
++                            order.agent_id, OrderCancelledMsg(deepcopy(order))
++                        )
++                        break
++
+             if self.execute_order(order) is None:
+                 break
+ 
