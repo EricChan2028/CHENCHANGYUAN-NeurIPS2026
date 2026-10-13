@@ -59,6 +59,30 @@ def test_monthly_grid_includes_unpublished_months_and_preserves_keys():
         monthly_grid(histories, card, {}, '2025-02-14')
 
 
+def test_monthly_constant_growth_with_asynchronous_publication_anchors():
+    dates = pd.date_range('2000-01-01', periods=120, freq='MS')
+    histories = {'A': pd.Series(np.arange(120.), index=dates),
+                 'B': pd.Series(np.arange(119.), index=dates[:-1])}
+    samples, stats = simulate(histories, [42, 65], 'level', 500, 773,
+                               np.array([[3, 4], [4, 5]]))
+    np.testing.assert_allclose(samples[:, 0], np.tile([122., 123.], (500, 1)), atol=1e-10)
+    np.testing.assert_allclose(samples[:, 1], np.tile([122., 123.], (500, 1)), atol=1e-10)
+    assert stats['sampling_steps'] == {'A': [3, 4], 'B': [4, 5]}
+
+
+def test_monthly_joint_shocks_preserve_proportional_assets_and_repeat():
+    rng = np.random.default_rng(20)
+    dates = pd.date_range('2000-01-01', periods=180, freq='MS')
+    series = pd.Series(100 + rng.normal(.1, .3, len(dates)).cumsum(), index=dates)
+    histories = {'A': series, 'B': 2 * series}
+    steps = np.array([[2, 6], [2, 6]])
+    first, _ = simulate(histories, [42, 126], 'level', 2000, 773, steps)
+    repeated, _ = simulate(histories, [42, 126], 'level', 2000, 773, steps)
+    np.testing.assert_array_equal(first, repeated)
+    np.testing.assert_allclose(first[:, 1], 2 * first[:, 0], atol=1e-12)
+    assert np.corrcoef(first[:, 0, 0], first[:, 0, 1])[0, 1] > .25
+
+
 def test_dated_text_never_uses_future_or_unindexed_documents(tmp_path):
     text = tmp_path / 'text'
     text.mkdir()

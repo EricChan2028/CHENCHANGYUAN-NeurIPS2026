@@ -9,16 +9,16 @@
       "sha256": "4a0263609b68efa383c51ff75bb21ac056fabbd3074931da13f62eaede3cb97b"
     },
     "README.md": {
-      "bytes": 6493,
-      "sha256": "2dc2de1271ffa0fedf59dec16a001b88bc70846e2ad61c4258a151b7e280554c"
+      "bytes": 6599,
+      "sha256": "c03fffc10b5b4cd2fddf9710f8209be1c17d06fa129f528426d220f8d2776911"
     },
     "deployment/README.md": {
-      "bytes": 6493,
-      "sha256": "2dc2de1271ffa0fedf59dec16a001b88bc70846e2ad61c4258a151b7e280554c"
+      "bytes": 6599,
+      "sha256": "c03fffc10b5b4cd2fddf9710f8209be1c17d06fa129f528426d220f8d2776911"
     },
     "deployment/container_smoke.py": {
-      "bytes": 11702,
-      "sha256": "50b94121469f0155dc2808181b9351cda36fd8d36114914d271c055802e13abd"
+      "bytes": 11904,
+      "sha256": "e281f54cb9dd50360b5fbf2d8bd0c7a62ca0ad6d6614bde59435cf40561e6f6f"
     },
     "deployment/cpu-build.yml": {
       "bytes": 3866,
@@ -69,16 +69,16 @@
       "sha256": "1485096c31a2268ab165a7cbaeb46410fb7f135203e2902ae73e2c0bce09b74d"
     },
     "t2/forecast.py": {
-      "bytes": 16863,
-      "sha256": "77ff516b9b6fd88ebe6222970646c7fc2de2510cafec986e58c9326249a17a9f"
+      "bytes": 21566,
+      "sha256": "ad16c1d3eee9e661f251a952788f75968d8c9078993e8a7e876979fb517cb770"
     },
     "t2/requirements.txt": {
       "bytes": 405,
       "sha256": "45a640d7a634bfe814b6eabdbc49fb6dfd2ecbdac4d2e9c95a0b0d1dcf122ff6"
     },
     "t2/test_forecast.py": {
-      "bytes": 4490,
-      "sha256": "cd39cab070ff5539ee0082ba48f6aa617f183d6df92a75b8108da6942184eb0e"
+      "bytes": 5821,
+      "sha256": "dad7f4e8b1bb5962533b82257f0370e89f6205528f3aebd1db9d5d7670ab67c5"
     },
     "t3/.dockerignore": {
       "bytes": 129,

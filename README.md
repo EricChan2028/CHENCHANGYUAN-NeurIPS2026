@@ -46,8 +46,9 @@ are mounted into candidate containers; reference outputs remain on the validator
 
 Containers run without networking or GPU access, with a read-only root filesystem,
 4 CPUs, 8 GiB memory, a 64 MiB temporary filesystem and a 300-second check timeout.
-T2 runs the actual `forecast` command on the official Treasury-curve exemplar, then the
-official gates-only scorer without fabricated future labels. T3 runs `simulate` twice on
+T2 runs the actual `forecast` command on both the official daily Treasury-curve exemplar
+and a monthly macro unit, then the official gates-only scorer without fabricated future
+labels. Both original input cards and manifests are validated before staging. T3 runs `simulate` twice on
 the public STP scenario, checks stable trace and ledger hashes, and runs `simulate-batch`
 on the public three-scenario batch followed by official developer gates. These checks
 cover a few public examples; they establish neither private-test performance nor rank.

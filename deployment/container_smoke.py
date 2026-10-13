@@ -154,27 +154,30 @@ def check(track: str, image: str, work: Path) -> None:
     detail = inspect_image(image)
     checks: list[str] = []
     if track == "t2":
-        unit = checkout / "units/t2-EXAMPLE-ust-curve-1m"
-        card = verify_public_inputs(unit)
+        # Exercise both branches: the v002 change is monthly, while the original
+        # Treasury exemplar exercises the unchanged daily engine.
+        for name, panel, label in (
+            ("t2-EXAMPLE-ust-curve-1m", "rates_daily.parquet", "exemplar"),
+            ("t2-F1-cpi-glidepath-2023", "macro_monthly.parquet", "monthly"),
+        ):
+            unit = checkout / "units" / name
+            card = verify_public_inputs(unit)
+            inputs = stage_inputs(unit, work / f"runtime-inputs/t2-{label}", (
+                "card.toml", "forecast_spec.json", "panels", "text",
+            ))
+            if not (inputs / "panels").exists():
+                (inputs / "panels").mkdir()
+                copy_input(unit / panel, inputs / "panels" / panel)
+            outputs = work / f"runtime-outputs/t2-{label}"
+            container_run(image, inputs, outputs, [
+                "forecast", "--panels", "/input/panels", "--text", "/input/text",
+                "--asof", card["provenance"]["data_cutoff"], "--out", "/output/forecast.parquet",
+            ])
+            run([sys.executable, "-m", "qfbench2_track_forecasting.scoring", "score",
+                 "--card", str(unit / "card.toml"), "--forecast", str(outputs / "forecast.parquet")])
+            checks.append("T2 official gates-only exemplar" if label == "exemplar"
+                          else "T2 official monthly gates-only unit")
         checks.append("T2 official input card and manifest validation on original unit")
-        inputs = stage_inputs(unit, work / "runtime-inputs/t2", (
-            "card.toml", "forecast_spec.json", "panels", "text",
-        ))
-        # The published exemplar stores this input at its root, while the runtime
-        # CLI expects a panels directory. Do not copy any answer/reference files.
-        if not (inputs / "panels").exists():
-            (inputs / "panels").mkdir()
-            copy_input(unit / "rates_daily.parquet", inputs / "panels/rates_daily.parquet")
-        asof = card["provenance"]["data_cutoff"]
-        outputs = work / "runtime-outputs/t2"
-        container_run(image, inputs, outputs, [
-            "forecast", "--panels", "/input/panels", "--text", "/input/text",
-            "--asof", asof, "--out", "/output/forecast.parquet",
-        ])
-        # Public practice has no realized labels. Run real gates, never fabricate a score.
-        run([sys.executable, "-m", "qfbench2_track_forecasting.scoring", "score",
-             "--card", str(unit / "card.toml"), "--forecast", str(outputs / "forecast.parquet")])
-        checks.append("T2 official gates-only exemplar")
     else:
         unit = checkout / "units/t3-stp-cancel-newest"
         inputs = stage_inputs(unit, work / "runtime-inputs/t3-single", ("scenario.json", "card.toml"))

@@ -1,7 +1,7 @@
 """## Executive summary (read this first)
 Produce CPU-only joint forecasts from the supplied, cutoff-limited public inputs.
-The candidate uses a stationary block bootstrap, adaptive volatility, conservative
-drift and a small, auditable text-risk overlay. No weights or network are used.
+The candidate uses a stationary block bootstrap for daily series and a filtered,
+shrunk autoregressive bootstrap for monthly growth. No weights or network are used.
 """
 
 from __future__ import annotations
@@ -146,11 +146,89 @@ def _drift(values: np.ndarray, monthly: bool, target: str) -> np.ndarray:
     return np.zeros(values.shape[1])
 
 
+def _simulate_monthly(histories: dict[str, pd.Series], horizons: list[int], target: str,
+                      n_draws: int, seed: int, panel_steps: np.ndarray,
+                      width_multiplier: float) -> tuple[np.ndarray, dict]:
+    """Joint filtered shocks and regularized monthly growth persistence.
+
+    Filtered means that a historical shock is divided by its prior volatility.
+    Autoregression uses the latest growth deviation to predict the next one; a
+    24-observation zero-persistence prior and bounded coefficient reduce overfit.
+    """
+    assets = list(histories)
+    frame = step_frame(histories, target, True)
+    values = frame.to_numpy()[-240:]
+    n_assets = len(assets)
+    anchors = np.zeros(n_assets) if target == 'log_return' else np.array([s.iloc[-1] for s in histories.values()])
+    steps = np.asarray(panel_steps, dtype=int)
+    origins = np.array([s.index[-1].to_period('M').ordinal for s in histories.values()])
+    offset = origins - origins.min()
+    endpoints = steps + offset[:, None]
+    maximum = int(endpoints.max())
+    if maximum < 1 or maximum > 5000:
+        raise ValueError('Forecast exceeds supported positive sampling horizon')
+    drift = _drift(values, True, target)
+    recent = values[-60:]
+    x, y = recent[:-1] - drift, recent[1:] - drift
+    denominator = np.sum(x * x, axis=0) + 24 * np.var(recent, axis=0)
+    phi = np.divide(np.sum(x * y, axis=0), denominator,
+                    out=np.zeros(n_assets), where=denominator > 1e-24)
+    phi = np.clip(phi, -0.35, 0.70)
+    residuals = values[1:] - drift - phi * (values[:-1] - drift)
+    residuals -= residuals.mean(axis=0)
+    long_var = residuals[-60:].var(axis=0, ddof=1)
+    burn = min(24, len(residuals) // 3)
+    initial = residuals[:burn].var(axis=0, ddof=1)
+    floor = np.maximum(initial * 0.05, 1e-24)
+    variance = np.maximum(initial, floor)
+    decay = np.exp2(-1.0 / 12)
+    standardized = []
+    for i, residual in enumerate(residuals):
+        if i >= burn:
+            standardized.append(residual / np.sqrt(np.maximum(variance, floor)))
+        variance = decay * variance + (1 - decay) * residual ** 2
+    standardized = np.asarray(standardized)
+    standardized -= standardized.mean(axis=0)
+    empirical_sd = standardized.std(axis=0, ddof=1)
+    standardized = np.divide(standardized, empirical_sd, out=np.zeros_like(standardized), where=empirical_sd > 1e-12)
+    current_var = 0.75 * variance + 0.25 * long_var
+    rng = np.random.default_rng(seed)
+    # Keep the frozen experiment's exact random stream, including initialization.
+    indices = rng.integers(0, len(standardized), size=n_draws)
+    previous = np.tile(values[-1] - drift, (n_draws, 1))
+    result = np.empty((n_draws, n_assets, len(horizons)))
+    path = np.zeros((n_draws, n_assets))
+    for step in range(1, maximum + 1):
+        restart = rng.random(n_draws) < 1.0
+        indices = np.where(restart, rng.integers(0, len(standardized), size=n_draws), (indices + 1) % len(standardized))
+        persistence = np.exp2(-(step - 1) / 12)
+        scale = np.sqrt(persistence * current_var + (1 - persistence) * long_var)
+        innovation = standardized[indices] * scale * width_multiplier
+        change = drift + phi * previous + innovation
+        previous = np.where(step > offset, change - drift, previous)
+        path += change * (step > offset)
+        for ai, hi in np.argwhere(endpoints == step):
+            result[:, ai, hi] = anchors[ai] + path[:, ai]
+    if not np.isfinite(result).all():
+        raise ValueError('Nonfinite forecast draws')
+    return result, {'method': 'filtered_ar', 'step_unit': 'month',
+        'n_aligned_steps': len(frame), 'n_estimation_steps': len(values),
+        'anchor': dict(zip(assets, anchors.tolist())),
+        'drift_per_step': dict(zip(assets, drift.tolist())),
+        'growth_autoregression': dict(zip(assets, phi.tolist())),
+        'innovation_scale': dict(zip(assets, np.sqrt(current_var).tolist())),
+        'sampling_steps': {a: steps[i].tolist() for i, a in enumerate(assets)},
+        'width_multiplier': width_multiplier}
+
+
 def simulate(histories: dict[str, pd.Series], horizons: list[int], target: str,
              n_draws: int = 2000, seed: int = 773, panel_steps: np.ndarray | None = None,
              method: str = 'adaptive', width_multiplier: float = 1.0) -> tuple[np.ndarray, dict]:
     """Simulate one path per joint draw, reusing its earlier innovations at later horizons."""
     monthly = panel_steps is not None
+    if monthly and method == 'adaptive':
+        return _simulate_monthly(histories, horizons, target, n_draws, seed,
+                                 panel_steps, width_multiplier)
     assets = list(histories)
     frame = step_frame(histories, target, monthly)
     values = frame.to_numpy()
@@ -243,6 +321,7 @@ def run(panels: Path, text: Path, asof: str, out: Path, card_path: Path | None =
     samples, stats = simulate(histories, horizons, target, n_draws, (seed + salt) % 2**32,
                               grid, method, evidence['width_multiplier'])
     method_name = ('CPU joint Gaussian walk on 299 aligned historical steps' if method == 'baseline'
+                   else 'CPU filtered autoregressive monthly bootstrap' if grid is not None
                    else 'CPU stationary block bootstrap with adaptive volatility')
     method_name += '; experimental dated text risk enabled' if use_text else '; text-blind'
     metadata = {'unit_id': card['task']['id'], 'asof': asof, 'representation': 'samples',
@@ -265,7 +344,11 @@ def run(panels: Path, text: Path, asof: str, out: Path, card_path: Path | None =
         'the same dated shock vector across assets, and later horizons accumulate the earlier path. '
         'The sample mean is removed before drift is added. Volatility combines recent exponentially '
         'weighted changes and a longer window. Daily level drift is zero. Daily return drift is a '
-        'shrunk historical log-return mean. Monthly drift combines two historical growth windows.\n\n')
+        'shrunk historical log-return mean. Monthly drift combines two historical growth windows. '
+        'Monthly forecasts fit a bounded, ridge-shrunk autoregression to growth deviations, '
+        'resample joint volatility-standardized residuals, and let current variance decay '
+        'toward a longer-window estimate. Monthly residuals are sampled independently in '
+        'time because growth persistence is modeled explicitly.\n\n')
     rationale = ('## Executive summary (read this first)\n\n'
         f"Forecast for {card['task']['id']} using only observations at or before {asof}. "
         'CPU only; no pretrained model, external API, network, retrieved outcomes, or stored answers.\n\n'
