@@ -85,8 +85,8 @@
       "sha256": "1636b353b26a5ab0756bf12c0a438816483d8d762769142bead2e72bfe18a75f"
     },
     "t3/Dockerfile": {
-      "bytes": 1221,
-      "sha256": "fb9aed93326305503025d1a4668497fc2d573f043a6ffac41bc505f74a492cd6"
+      "bytes": 1365,
+      "sha256": "6817c1f7346de41105697be6bc030ad74957d6b14e049b72897a2226bc1fd6b2"
     },
     "t3/LICENSE": {
       "bytes": 1071,

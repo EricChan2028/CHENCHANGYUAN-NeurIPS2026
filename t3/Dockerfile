@@ -5,6 +5,8 @@ WORKDIR /app
 COPY requirements.txt /app/requirements.txt
 RUN pip install -r /app/requirements.txt
 COPY vendor/track3_runtime /app/vendor/track3_runtime
+# Windows source exports can contain CRLF; restore the official LF patch bytes.
+RUN sed -i 's/\r$//' /app/vendor/track3_runtime/patches/*.patch
 RUN apt-get update && apt-get install -y --no-install-recommends git \
     && git clone https://github.com/jpmorganchase/abides-jpmc-public.git /tmp/abides \
     && git -C /tmp/abides checkout f9cbe51342b7dedd9587e4e069040d68a5c6477f \
