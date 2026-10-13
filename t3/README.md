@@ -2,7 +2,11 @@
 
 This candidate runs the genuine pinned ABIDES market simulator entirely on CPU. It
 preserves market and agent behavior while replacing scalar latency clipping and
-projecting logs directly into the required trace columns. Independent batch markets
+projecting logs directly into the required trace columns. Version 002 also caches
+pure second-resolution timestamp formatting, uses the same heap comparisons without
+thread locks in each single-thread kernel, and copies flat immutable log dictionaries
+without recursively redispatching every scalar. Nested/mutable log values retain the
+original deep-copy path. Independent batch markets
 run in at most four separate processes. No reference trace, pretrained model, API,
 GPU library or network request is used during simulation.
 
@@ -41,6 +45,8 @@ Linux's int64 result. Linux submissions do not apply this adjustment.
 .\.venv\Scripts\python.exe verify_public.py --upstream 'D:\NeurIPS Challenge\upstream-t3' --output runs/public --report ../reports/t3-public-exact.json --workers 2
 .\.venv\Scripts\python.exe verify_batch.py --upstream 'D:\NeurIPS Challenge\upstream-t3' --output runs/public-batch --report ../reports/t3-public-batch.json --workers 2
 .\.venv\Scripts\python.exe benchmark_local.py --config <scenario.json> --output runs/benchmark --report ../reports/t3-local-benchmark.json --repeats 3
+.\.venv\Scripts\python.exe verify_v002.py --report ../reports/t3-v002-synthetic.json
+.\.venv\Scripts\python.exe benchmark_v002.py --upstream 'D:\NeurIPS Challenge\upstream-t3' --output runs/v002-benchmark --report ../reports/t3-v002-benchmark.json --repeats 3
 ```
 
 `smoke_test.py` compares 40,000 latency draws against the original implementation,
@@ -54,6 +60,14 @@ frozen **public** traces and ledgers. This is stricter than approximate table
 comparison, but does not replace the official Linux container/scoring tests.
 `benchmark_local.py` alternates baseline/candidate order, includes Python startup in
 process timing, and requires identical stable output bytes across all timed runs.
+`verify_v002.py` independently checks timestamp boundaries, queue tie ordering and
+mutable/aliased/cyclic log values, followed by eight fresh market configurations with
+all four latency models, exchange delays, shocks, agent populations and depths. It
+checks one- and two-worker batch equivalence against separate simulation calls.
+`benchmark_v002.py` compares the frozen prior submitted source (`cpu_agent_v001.py`,
+SHA-256 `2a58e80cb2a502817e38420995fe700da4737e05c81ce510ba495514226ad309`)
+against v002 in alternating fresh processes across small and large markets. The
+snapshot and all development checks stay outside the container build context.
 
 The official `qfbench2 smoke` manifest verifier refuses Windows because the required
 `O_NOFOLLOW` and `O_DIRECTORY` facilities are unavailable. Its checks are retained
@@ -91,6 +105,6 @@ the organizer's externally measured time, not these sidecars, determines ranking
 - The base Python image tag remains floating until the campaign build workflow
   resolves and records the final immutable image digest. No image digest is invented.
 
-Next optimization candidates come from profiling, especially pure timestamp
-formatting, per-event copying and the single-threaded priority queue. Preserve exact
-RNG draws and event ordering, and verify each change separately before adoption.
+Future optimizations must preserve exact RNG draws, event ordering and mutable log
+snapshots. Compare against the prior submitted source and fresh seeds before adoption;
+public reference outputs are validation data and never part of the runtime.

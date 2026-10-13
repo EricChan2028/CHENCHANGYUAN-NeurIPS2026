@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import heapq
 import json
 import math
 import os
@@ -15,6 +16,8 @@ import sys
 import tempfile
 import time
 from concurrent.futures import ProcessPoolExecutor
+from functools import lru_cache
+from types import SimpleNamespace
 
 # Limit numerical-library threads before importing NumPy; independent batch workers
 # share the competition's four CPUs rather than starting four BLAS pools each.
@@ -42,6 +45,83 @@ from abides_fork.trace import (
 )
 
 _ORIGINAL_LATENCY = ScenarioLatencyModel.get_latency
+import abides_core.utils as _core_utils
+import abides_core.kernel as _kernel_module
+import abides_core.agent as _agent_module
+from abides_markets.orders import Side
+
+_ORIGINAL_FMT_TS = _core_utils.fmt_ts
+_ORIGINAL_KERNEL_QUEUE = _kernel_module.queue
+_ORIGINAL_LOG_DEEPCOPY = _agent_module.deepcopy
+_COPY_ATOMIC_TYPES = frozenset((type(None), int, float, bool, str, bytes, complex, Side))
+
+
+def snapshot_copy(value):
+    """Fast exact deepcopy for scalar-only log dictionaries; fallback for all else.
+
+    These exact builtin types and Side enum values are unchanged by deepcopy.
+    Nested containers, NumPy scalars, custom objects and mutable order tags retain
+    Python's complete memoized deepcopy behavior.
+    """
+    value_type = type(value)
+    if value_type in _COPY_ATOMIC_TYPES:
+        return value
+    if value_type is dict and all(type(k) in _COPY_ATOMIC_TYPES and type(v) in _COPY_ATOMIC_TYPES
+                                  for k, v in value.items()):
+        return value.copy()
+    return _ORIGINAL_LOG_DEEPCOPY(value)
+
+
+@lru_cache(maxsize=1024)
+def _format_whole_second(second: int) -> str:
+    return _ORIGINAL_FMT_TS(second * 1_000_000_000)
+
+
+def cached_fmt_ts(timestamp) -> str:
+    """Reuse identical second-resolution strings, never simulation state or outputs."""
+    # The pinned formatter discards fractional seconds. Handle integer nanoseconds
+    # only, with pandas' supported endpoints retained by the original function.
+    if (type(timestamp) is int or isinstance(timestamp, np.integer)) and -9223372036000000000 <= timestamp <= 9223372036854775807:
+        return _format_whole_second(int(timestamp) // 1_000_000_000)
+    return _ORIGINAL_FMT_TS(timestamp)
+
+
+class KernelHeapQueue:
+    """Unbounded heap for the kernel's one-thread event loop.
+
+    The exact event tuples and heapq comparisons match queue.PriorityQueue. Batch
+    workers each own their kernel and heap; no producer or consumer crosses threads.
+    """
+    def __init__(self):
+        self.queue = []
+
+    def put(self, item):
+        heapq.heappush(self.queue, item)
+
+    def get(self):
+        if not self.queue:
+            raise _ORIGINAL_KERNEL_QUEUE.Empty
+        return heapq.heappop(self.queue)
+
+    def empty(self):
+        return not self.queue
+
+    def qsize(self):
+        return len(self.queue)
+
+
+def configure_hotpaths(baseline: bool) -> None:
+    """Install or restore pure-formatting and single-thread queue substitutions."""
+    formatter = _ORIGINAL_FMT_TS if baseline else cached_fmt_ts
+    # ABIDES imports fmt_ts by value. Update only those known aliases; do not
+    # overwrite similarly named functions belonging to other libraries.
+    for name, module in tuple(sys.modules.items()):
+        if name.startswith(("abides_core", "abides_markets")):
+            value = getattr(module, "fmt_ts", None)
+            if value is _ORIGINAL_FMT_TS or value is cached_fmt_ts:
+                module.fmt_ts = formatter
+    _kernel_module.queue = _ORIGINAL_KERNEL_QUEUE if baseline else SimpleNamespace(PriorityQueue=KernelHeapQueue)
+    _agent_module.deepcopy = _ORIGINAL_LOG_DEEPCOPY if baseline else snapshot_copy
 
 
 def scalar_latency(self, sender_id: int, recipient_id: int) -> int:
@@ -150,6 +230,7 @@ def simulate(config_path: str | Path, out_path: str | Path, baseline: bool = Fal
     Order._order_id_counter = 0
     setattr(Message, "_Message__message_id_counter", 1)
     ScenarioLatencyModel.get_latency = _ORIGINAL_LATENCY if baseline else scalar_latency
+    configure_hotpaths(baseline)
     config = build_config(scenario)
     built = time.perf_counter()
     # Windows and Linux both get an absolute writable temporary log path. Each

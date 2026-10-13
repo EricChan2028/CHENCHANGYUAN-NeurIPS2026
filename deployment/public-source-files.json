@@ -176,6 +176,18 @@
     {
       "source": "deployment/public-gitignore",
       "destination": ".gitignore"
+    },
+    {
+      "source": "t3/cpu_agent_v001.py",
+      "destination": "t3/cpu_agent_v001.py"
+    },
+    {
+      "source": "t3/verify_v002.py",
+      "destination": "t3/verify_v002.py"
+    },
+    {
+      "source": "t3/benchmark_v002.py",
+      "destination": "t3/benchmark_v002.py"
     }
   ]
 }
