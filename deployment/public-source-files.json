@@ -2,6 +2,22 @@
   "format_version": 1,
   "files": [
     {
+      "source": "deployment/profile_t3_linux.py",
+      "destination": "deployment/profile_t3_linux.py"
+    },
+    {
+      "source": "deployment/cpu-profile.yml",
+      "destination": "deployment/cpu-profile.yml"
+    },
+    {
+      "source": "deployment/cpu-profile.yml",
+      "destination": ".github/workflows/cpu-profile.yml"
+    },
+    {
+      "source": "tools/test_t3_linux_profile.py",
+      "destination": "tools/test_t3_linux_profile.py"
+    },
+    {
       "source": "deployment/benchmark_t3_pair.py",
       "destination": "deployment/benchmark_t3_pair.py"
     },

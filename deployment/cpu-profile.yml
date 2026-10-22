@@ -1,0 +1,43 @@
+name: T3 immutable CPU profile
+
+on:
+  push:
+    branches: [t3-profile]
+    paths:
+      - 'deployment/profile_t3_linux.py'
+      - 'deployment/cpu-profile.yml'
+      - '.github/workflows/cpu-profile.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: agenthon-t3-diagnostic-profile
+  cancel-in-progress: false
+
+jobs:
+  profile:
+    # Public standard runners only; do not use paid private-repository minutes.
+    if: ${{ github.event.repository.private == false }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      CUDA_VISIBLE_DEVICES: ''
+      NVIDIA_VISIBLE_DEVICES: void
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      NUMEXPR_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.13'
+      - name: Profile two public cases in the immutable CPU image
+        run: |
+          set -euo pipefail
+          python deployment/profile_t3_linux.py --work .profile-t3
