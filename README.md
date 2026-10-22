@@ -59,6 +59,14 @@ After every invocation, output files and their combined size must fit the publis
 64 MiB for T2 and 256 MiB for T3. The smoke resource budget above is deliberately smaller
 than the full T2 Final allowance; it is not a claim about the organizer's timing fleet.
 
+The v003 T3 candidate additionally runs 24 fresh Linux containers across four public
+scenarios, alternating against the frozen v002 source with identical dependencies.
+Every trace, ledger and event count must match. Publication requires at least a 3%
+increase in the equal-unit mean event rate, no larger-case regression beyond 5%, and
+no small-case regression beyond 10%, measured from three process times per version
+and case. The protocol and thresholds are fixed before timing. This is a diagnostic
+on a shared CI host, not the organizer's Final timing or a ranking estimate.
+
 Before the T2 container starts, the unchanged shared toolkit validates `card.toml` and
 the manifest of the original pinned public unit, including its declared file hashes and
 coverage. The reduced input mount is not used for this check. An invalid card, bad hash,

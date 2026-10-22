@@ -70,6 +70,11 @@ jobs:
         run: |
           set -euo pipefail
           python deployment/container_smoke.py check --track "$TRACK" --work .ci --image "local/agenthon-$TRACK:$GITHUB_SHA"
+      - name: Confirm T3 speed against frozen v002 with exact output checks
+        if: ${{ matrix.track == 't3' }}
+        run: |
+          set -euo pipefail
+          python deployment/benchmark_t3_pair.py --image "local/agenthon-$TRACK:$GITHUB_SHA" --work .ci --report .ci/t3-paired-report.json
       - name: Publish the tested image and record its immutable digest
         if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.publish) }}
         env:

@@ -6,7 +6,10 @@ projecting logs directly into the required trace columns. Version 002 also cache
 pure second-resolution timestamp formatting, uses the same heap comparisons without
 thread locks in each single-thread kernel, and copies flat immutable log dictionaries
 without recursively redispatching every scalar. Nested/mutable log values retain the
-original deep-copy path. Independent batch markets
+original deep-copy path. Version 003 computes the same end-of-market liquidity
+dropout metrics using tuple traversal instead of allocating a pandas Series for
+every book snapshot. It retains the original DataFrame coercion, arithmetic order,
+all records, and treatment of an unclosed final dropout. Independent batch markets
 run in at most four separate processes. No reference trace, pretrained model, API,
 GPU library or network request is used during simulation.
 
@@ -47,6 +50,8 @@ Linux's int64 result. Linux submissions do not apply this adjustment.
 .\.venv\Scripts\python.exe benchmark_local.py --config <scenario.json> --output runs/benchmark --report ../reports/t3-local-benchmark.json --repeats 3
 .\.venv\Scripts\python.exe verify_v002.py --report ../reports/t3-v002-synthetic.json
 .\.venv\Scripts\python.exe benchmark_v002.py --upstream 'D:\NeurIPS Challenge\upstream-t3' --output runs/v002-benchmark --report ../reports/t3-v002-benchmark.json --repeats 3
+.\.venv\Scripts\python.exe verify_v003.py --report ../reports/t3-v003-synthetic.json
+.\.venv\Scripts\python.exe benchmark_v003.py --upstream 'D:\NeurIPS Challenge\upstream-t3' --output runs/v003-benchmark --report ../reports/t3-v003-benchmark.json --repeats 3
 ```
 
 `smoke_test.py` compares 40,000 latency draws against the original implementation,
@@ -68,6 +73,18 @@ checks one- and two-worker batch equivalence against separate simulation calls.
 SHA-256 `2a58e80cb2a502817e38420995fe700da4737e05c81ce510ba495514226ad309`)
 against v002 in alternating fresh processes across small and large markets. The
 snapshot and all development checks stay outside the container build context.
+
+`verify_v003.py` adds 260 book-history cases checking exact liquidity metric values,
+types and numerical warnings, including zero duration and trailing empty books. It
+also compares the metrics on eight newly seeded markets while retaining complete
+trace, ledger and batch-isolation checks. The implementation-specific NumPy
+deprecation warning triggered only by pandas `iterrows` is excluded from the warning
+comparison because the deprecated API is no longer used. `benchmark_v003.py`
+compares whole fresh processes against `cpu_agent_v002.py`, whose SHA-256 is
+`d1b832f3e9fc3697da0c4b7d5620f8cfbef85fee7d624d85675730f8beb546fe`.
+Its optional `--pin-cpu <allowed-logical-cpu>` restricts only the benchmark child
+processes to the same permitted logical CPU. Preserve unpinned and pinned results
+separately; neither replaces timing on the official Linux resource profile.
 
 The official `qfbench2 smoke` manifest verifier refuses Windows because the required
 `O_NOFOLLOW` and `O_DIRECTORY` facilities are unavailable. Its checks are retained

@@ -2,6 +2,26 @@
   "format_version": 1,
   "files": [
     {
+      "source": "deployment/benchmark_t3_pair.py",
+      "destination": "deployment/benchmark_t3_pair.py"
+    },
+    {
+      "source": "tools/test_t3_linux_benchmark.py",
+      "destination": "tools/test_t3_linux_benchmark.py"
+    },
+    {
+      "source": "t3/cpu_agent_v002.py",
+      "destination": "t3/cpu_agent_v002.py"
+    },
+    {
+      "source": "t3/verify_v003.py",
+      "destination": "t3/verify_v003.py"
+    },
+    {
+      "source": "t3/benchmark_v003.py",
+      "destination": "t3/benchmark_v003.py"
+    },
+    {
       "source": "deployment/README.md",
       "destination": "deployment/README.md"
     },

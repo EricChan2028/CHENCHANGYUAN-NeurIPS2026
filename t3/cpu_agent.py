@@ -49,10 +49,12 @@ import abides_core.utils as _core_utils
 import abides_core.kernel as _kernel_module
 import abides_core.agent as _agent_module
 from abides_markets.orders import Side
+from abides_markets.agents.exchange_agent import ExchangeAgent
 
 _ORIGINAL_FMT_TS = _core_utils.fmt_ts
 _ORIGINAL_KERNEL_QUEUE = _kernel_module.queue
 _ORIGINAL_LOG_DEEPCOPY = _agent_module.deepcopy
+_ORIGINAL_TIME_DROPOUT = ExchangeAgent.get_time_dropout
 _COPY_ATOMIC_TYPES = frozenset((type(None), int, float, bool, str, bytes, complex, Side))
 
 
@@ -110,6 +112,44 @@ class KernelHeapQueue:
         return len(self.queue)
 
 
+def fast_time_dropout(self, book, symbol):
+    """Preserve liquidity metrics while avoiding a pandas Series per book row.
+
+    The original DataFrame coercion, arithmetic order, and treatment of a final
+    unclosed dropout are retained. Only the row traversal changes; no records,
+    exchange metrics, or simulation events are omitted.
+    """
+    if len(book) == 0:
+        return
+    df = pd.DataFrame(book)
+    total_time = df["QuoteTime"].iloc[-1] - df["QuoteTime"].iloc[0]
+    is_null_bids = False
+    t_null_bids_first = 0
+    T_null_bids = 0
+    is_null_asks = False
+    t_null_asks_first = 0
+    T_null_asks = 0
+    for quote_time, bids, asks in df[["QuoteTime", "bids", "asks"]].itertuples(index=False, name=None):
+        if (len(bids) == 0) & (is_null_bids == False):
+            t_null_bids_first = quote_time
+            is_null_bids = True
+        elif (len(bids) != 0) & (is_null_bids == True):
+            T_null_bids += quote_time - t_null_bids_first
+            is_null_bids = False
+        if (len(asks) == 0) & (is_null_asks == False):
+            t_null_asks_first = quote_time
+            is_null_asks = True
+        elif (len(asks) != 0) & (is_null_asks == True):
+            T_null_asks += quote_time - t_null_asks_first
+            is_null_asks = False
+    self.metric_trackers[symbol] = self.MetricTracker(
+        total_time_no_liquidity_asks=T_null_asks / 1e9,
+        total_time_no_liquidity_bids=T_null_bids / 1e9,
+        pct_time_no_liquidity_asks=100 * T_null_asks / total_time,
+        pct_time_no_liquidity_bids=100 * T_null_bids / total_time,
+    )
+
+
 def configure_hotpaths(baseline: bool) -> None:
     """Install or restore pure-formatting and single-thread queue substitutions."""
     formatter = _ORIGINAL_FMT_TS if baseline else cached_fmt_ts
@@ -122,6 +162,7 @@ def configure_hotpaths(baseline: bool) -> None:
                 module.fmt_ts = formatter
     _kernel_module.queue = _ORIGINAL_KERNEL_QUEUE if baseline else SimpleNamespace(PriorityQueue=KernelHeapQueue)
     _agent_module.deepcopy = _ORIGINAL_LOG_DEEPCOPY if baseline else snapshot_copy
+    ExchangeAgent.get_time_dropout = _ORIGINAL_TIME_DROPOUT if baseline else fast_time_dropout
 
 
 def scalar_latency(self, sender_id: int, recipient_id: int) -> int:
