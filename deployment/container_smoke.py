@@ -246,7 +246,7 @@ def published(track: str, image: str, work: Path) -> None:
     if len(matching) != 1:
         raise ValueError("cannot establish an unambiguous pushed image digest")
     reference = matching[0]
-    record = {"track": track, "image_reference": reference,
+    record = {"track": track, "image_reference": reference, "image_id": checked["image_id"],
               "source_revision": os.environ.get("GITHUB_SHA"),
               "anonymous_access": "pending separate check",
               "submission_uploaded": False}
