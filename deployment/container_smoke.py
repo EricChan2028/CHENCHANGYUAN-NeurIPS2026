@@ -14,11 +14,12 @@ import uuid
 
 UPSTREAM = {
     "t2": ("https://github.com/Agenthon-2026/track2-forecasting-public.git",
-           "a2c93e7b66b8c6a6c429fda81d6bc7873b7c5dec"),
+           "3b51e16b3f7c0fa0e56bcba323c2bb5e81b8bd56"),
     "t3": ("https://github.com/Agenthon-2026/track3-simulation-public.git",
-           "fe32378d92b9767a0452c8fbb9911dcf722a8c87"),
+           "2fa71ea2468db98bb1b1d06339a87d7e3a9d651c"),
 }
 T3_UNITS = ("t3-stp-cancel-newest", "t3-gbatch-dense-3")
+OUTPUT_LIMITS = {"t2": 64 * 1024 * 1024, "t3": 256 * 1024 * 1024}
 
 
 def run(argv: list[str], *, capture: bool = False, timeout: int = 600) -> str:
@@ -118,7 +119,22 @@ def inspect_image(image: str) -> dict:
     return detail
 
 
-def container_run(image: str, inputs: Path, outputs: Path, args: list[str]) -> None:
+def verify_output_sizes(outputs: Path, track: str) -> None:
+    limit = OUTPUT_LIMITS[track]
+    total = 0
+    for path in outputs.rglob("*"):
+        if path.is_symlink() or path.is_junction():
+            raise ValueError("output links are not permitted")
+        if path.is_file():
+            size = path.stat().st_size
+            if size > limit:
+                raise ValueError("output file exceeds the published Final size cap")
+            total += size
+    if total > limit:
+        raise ValueError("total output exceeds the published Final size cap")
+
+
+def container_run(image: str, inputs: Path, outputs: Path, args: list[str], *, track: str) -> None:
     outputs.mkdir(parents=True, exist_ok=False)
     outputs.chmod(0o777)  # Permit the image's declared non-root user to write its bind mount.
     name = "agenthon-cpu-smoke-" + uuid.uuid4().hex
@@ -144,6 +160,7 @@ def container_run(image: str, inputs: Path, outputs: Path, args: list[str]) -> N
                        stderr=subprocess.DEVNULL, check=False, timeout=30)
     if not any(p.is_file() for p in outputs.rglob("*")):
         raise ValueError("container produced no files")
+    verify_output_sizes(outputs, track)
 
 
 def check(track: str, image: str, work: Path) -> None:
@@ -159,6 +176,8 @@ def check(track: str, image: str, work: Path) -> None:
         for name, panel, label in (
             ("t2-EXAMPLE-ust-curve-1m", "rates_daily.parquet", "exemplar"),
             ("t2-F1-cpi-glidepath-2023", "macro_monthly.parquet", "monthly"),
+            ("t2-F3-curve-ust3m-ust6m-ust1y-ust2y-005-ps1", "rates_daily.parquet", "short-ust"),
+            ("t2-F3-fx-krw-inr-zar-017-ps1", "em_fx_ecb_daily.parquet", "short-fx"),
         ):
             unit = checkout / "units" / name
             card = verify_public_inputs(unit)
@@ -172,27 +191,33 @@ def check(track: str, image: str, work: Path) -> None:
             container_run(image, inputs, outputs, [
                 "forecast", "--panels", "/input/panels", "--text", "/input/text",
                 "--asof", card["provenance"]["data_cutoff"], "--out", "/output/forecast.parquet",
-            ])
+            ], track="t2")
             run([sys.executable, "-m", "qfbench2_track_forecasting.scoring", "score",
                  "--card", str(unit / "card.toml"), "--forecast", str(outputs / "forecast.parquet")])
-            checks.append("T2 official gates-only exemplar" if label == "exemplar"
-                          else "T2 official monthly gates-only unit")
+            checks.append({"exemplar": "T2 official gates-only exemplar",
+                           "monthly": "T2 official monthly gates-only unit",
+                           "short-ust": "T2 Final short-horizon UST rehearsal",
+                           "short-fx": "T2 Final short-horizon FX rehearsal"}[label])
         checks.append("T2 official input card and manifest validation on original unit")
+        checks.append("T2 output file and total size caps checked")
     else:
         unit = checkout / "units/t3-stp-cancel-newest"
         inputs = stage_inputs(unit, work / "runtime-inputs/t3-single", ("scenario.json", "card.toml"))
         hashes: list[dict[str, str]] = []
-        for repeat in range(2):
+        # One warm-up plus four measured-repeat equivalents. This checks output
+        # stability, not the organizers' controlled Final throughput score.
+        for repeat in range(5):
             outputs = work / f"runtime-outputs/t3-single-{repeat}"
             container_run(image, inputs, outputs, [
                 "simulate", "--config", "/input/scenario.json", "--out", "/output/trace.parquet",
-            ])
+            ], track="t3")
             run(["qfbench2-smoke", str(unit), str(outputs), "--track", "simulation"])
             hashes.append({name: hashlib.sha256((outputs / name).read_bytes()).hexdigest()
                            for name in ("trace.parquet", "message_trace.parquet")})
-        if hashes[0] != hashes[1]:
+        if any(value != hashes[0] for value in hashes[1:]):
             raise ValueError("T3 stable trace or ledger differs between identical repeats")
         checks.extend(["T3 single public semantic gates twice", "T3 byte-stable trace and ledger"])
+        checks.append("T3 Final five-repeat byte-stability rehearsal")
         unit = checkout / "units/t3-gbatch-dense-3"
         inputs = stage_inputs(unit, work / "runtime-inputs/t3-batch", (
             "card.toml", "batch.json", "scenarios",
@@ -200,9 +225,10 @@ def check(track: str, image: str, work: Path) -> None:
         outputs = work / "runtime-outputs/t3-batch"
         container_run(image, inputs, outputs, [
             "simulate-batch", "--batch-dir", "/input/scenarios", "--out-dir", "/output",
-        ])
+        ], track="t3")
         run(["qfbench2-smoke", str(unit), str(outputs), "--track", "simulation"])
         checks.append("T3 batch public isolation and semantic gates")
+        checks.append("T3 output file and total size caps checked")
     report = {"track": track, "image_id": detail["Id"], "passed_checks": checks,
               "official_private_evaluation": False,
               "limitations": "Public-example checks only; no official score or rank."}

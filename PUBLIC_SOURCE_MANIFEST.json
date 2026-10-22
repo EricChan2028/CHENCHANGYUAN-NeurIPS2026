@@ -9,16 +9,16 @@
       "sha256": "4a0263609b68efa383c51ff75bb21ac056fabbd3074931da13f62eaede3cb97b"
     },
     "README.md": {
-      "bytes": 6599,
-      "sha256": "c03fffc10b5b4cd2fddf9710f8209be1c17d06fa129f528426d220f8d2776911"
+      "bytes": 7046,
+      "sha256": "4a7ca2d7edd2afb0016036afe56e8547b2cc881382a17121606f87380c81bb88"
     },
     "deployment/README.md": {
-      "bytes": 6599,
-      "sha256": "c03fffc10b5b4cd2fddf9710f8209be1c17d06fa129f528426d220f8d2776911"
+      "bytes": 7046,
+      "sha256": "4a7ca2d7edd2afb0016036afe56e8547b2cc881382a17121606f87380c81bb88"
     },
     "deployment/container_smoke.py": {
-      "bytes": 11904,
-      "sha256": "e281f54cb9dd50360b5fbf2d8bd0c7a62ca0ad6d6614bde59435cf40561e6f6f"
+      "bytes": 13361,
+      "sha256": "c94d26cfee22455c1c0877979667585a7cbd8980c2fcfe39b750fdb809f0ec8b"
     },
     "deployment/cpu-build.yml": {
       "bytes": 3866,
@@ -34,7 +34,7 @@
     },
     "deployment/validator-requirements.txt": {
       "bytes": 199,
-      "sha256": "ac61bd229fa526534615c7982059af9be9159a332ba0e7a65525ca885137d089"
+      "sha256": "97af7ac7c9d70d51508fbad9838c83889b3e8e0d637722854c1f4357e43cfed4"
     },
     "deployment/verify_public_image.py": {
       "bytes": 4437,
@@ -53,8 +53,8 @@
       "sha256": "72a6dae8870cbcd35329ff906cf00959bc027cb75200495df3a297c737c3d190"
     },
     "t2/PROVENANCE.md": {
-      "bytes": 1076,
-      "sha256": "c48b6b1bd1ff4df1dd5d2cc0ded43b97029604fefec969bda746bba546715d2a"
+      "bytes": 1088,
+      "sha256": "8bbe739afd68acb3794ef10c2d5a47efb7e3699f5fce071bec268478dcffb54c"
     },
     "t2/README.md": {
       "bytes": 5546,
@@ -74,7 +74,7 @@
     },
     "t2/requirements.txt": {
       "bytes": 405,
-      "sha256": "45a640d7a634bfe814b6eabdbc49fb6dfd2ecbdac4d2e9c95a0b0d1dcf122ff6"
+      "sha256": "f0656607b2f5e08def63ab8ed533058e7580ab09837c778fd58c518f08af6d8e"
     },
     "t2/test_forecast.py": {
       "bytes": 5821,

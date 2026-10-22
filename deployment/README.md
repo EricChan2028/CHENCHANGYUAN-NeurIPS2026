@@ -46,12 +46,18 @@ are mounted into candidate containers; reference outputs remain on the validator
 
 Containers run without networking or GPU access, with a read-only root filesystem,
 4 CPUs, 8 GiB memory, a 64 MiB temporary filesystem and a 300-second check timeout.
-T2 runs the actual `forecast` command on both the official daily Treasury-curve exemplar
-and a monthly macro unit, then the official gates-only scorer without fabricated future
-labels. Both original input cards and manifests are validated before staging. T3 runs `simulate` twice on
-the public STP scenario, checks stable trace and ledger hashes, and runs `simulate-batch`
+Final preparation pins toolkit v2.6.1 and the current track source commits. T2 runs the
+actual `forecast` command on the daily Treasury exemplar, a monthly macro unit, and two
+new short-horizon UST/EM-FX practice inputs. It uses the official gates-only scorer; public
+practice answer files are never mounted into the candidate. Original input cards and
+manifests are validated before staging. T3 runs `simulate` five times on
+the public STP scenario, checks stable trace and ledger hashes including the warm-up-equivalent
+run, and runs `simulate-batch`
 on the public three-scenario batch followed by official developer gates. These checks
 cover a few public examples; they establish neither private-test performance nor rank.
+After every invocation, output files and their combined size must fit the published cap:
+64 MiB for T2 and 256 MiB for T3. The smoke resource budget above is deliberately smaller
+than the full T2 Final allowance; it is not a claim about the organizer's timing fleet.
 
 Before the T2 container starts, the unchanged shared toolkit validates `card.toml` and
 the manifest of the original pinned public unit, including its declared file hashes and
