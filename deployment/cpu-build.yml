@@ -70,7 +70,7 @@ jobs:
         run: |
           set -euo pipefail
           python deployment/container_smoke.py check --track "$TRACK" --work .ci --image "local/agenthon-$TRACK:$GITHUB_SHA"
-      - name: Confirm T3 speed against frozen v002 with exact output checks
+      - name: Confirm T3 speed against frozen v003 with exact output checks
         if: ${{ matrix.track == 't3' }}
         run: |
           set -euo pipefail
@@ -85,7 +85,7 @@ jobs:
           printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
           trap 'docker logout ghcr.io >/dev/null 2>&1 || true' EXIT
           docker tag "local/agenthon-$TRACK:$GITHUB_SHA" "$image"
-          docker push "$image"
+          python deployment/push_public_image.py "$image"
           python deployment/container_smoke.py published --track "$TRACK" --work .ci --image "$image"
       - name: Verify anonymous image and layer access
         if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.publish) }}

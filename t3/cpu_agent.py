@@ -41,7 +41,8 @@ from abides_fork.config import ScenarioLatencyModel, build_config
 from abides_fork.scenario_io import read_scenario
 from abides_fork.trace import (
     TRACE_COLUMNS, _TRACE_DTYPES, _side_to_str,
-    extract_trace as reference_extract_trace, extract_message_trace,
+    extract_trace as reference_extract_trace,
+    extract_message_trace as reference_extract_message_trace, MESSAGE_TRACE_COLUMNS,
 )
 
 _ORIGINAL_LATENCY = ScenarioLatencyModel.get_latency
@@ -265,6 +266,60 @@ def peak_rss_bytes() -> int:
     return int(result if sys.platform == "darwin" else result * 1024)
 
 
+_LEDGER_INT_TYPES = frozenset((int, np.int8, np.int16, np.int32, np.int64))
+
+
+def fast_extract_message_trace(end_state: dict) -> pd.DataFrame:
+    """Construct exact typed ledger columns without DataFrame inference/recasting.
+
+    The fast path is restricted to replayable built-in containers and scalar
+    types emitted by the pinned kernel. Other domains use the unchanged
+    reference, retaining its coercion, missing-value and exception behavior.
+    """
+    if type(end_state) is not dict:
+        return reference_extract_message_trace(end_state)
+    ledger = end_state.get("message_ledger")
+    seqmap = end_state.get("deliver_seq_by_key")
+    if type(ledger) is not list or not ledger or type(seqmap) is not dict:
+        return reference_extract_message_trace(end_state)
+    # Validate lookup operands before conversion or lookup. In particular, never
+    # narrow destination IDs before finding the broadcast-specific delivery key.
+    if any(type(row) is not dict or type(row.get("message_id")) not in _LEDGER_INT_TYPES
+           or type(row.get("dst_id")) not in _LEDGER_INT_TYPES for row in ledger):
+        return reference_extract_message_trace(end_state)
+    rows = [(seq, row) for row in ledger
+            if (seq := seqmap.get((int(row["message_id"]), int(row["dst_id"])))) is not None]
+    if not rows or any(type(seq) not in _LEDGER_INT_TYPES for seq, _ in rows):
+        return reference_extract_message_trace(end_state)
+    rows.sort(key=lambda item: item[0])  # Python's stable ordering retains tied deliveries.
+    led = [row for _, row in rows]
+    columns = {}
+    try:
+        for name in MESSAGE_TRACE_COLUMNS:
+            values = [seq for seq, _ in rows] if name == "seq" else [row[name] for row in led]
+            if name == "msg_type":
+                if any(value is not None and type(value) is not str for value in values):
+                    raise TypeError("noncanonical ledger string domain")
+                columns[name] = pd.array(values, dtype="string")
+            elif name in ("t_send_ns", "order_id", "causal_parent"):
+                if any(value is not None and type(value) not in _LEDGER_INT_TYPES for value in values):
+                    raise TypeError("noncanonical nullable ledger integer domain")
+                data = np.fromiter((0 if value is None else value for value in values),
+                                   dtype=np.int64, count=len(values))
+                mask = np.fromiter((value is None for value in values),
+                                   dtype=np.bool_, count=len(values))
+                columns[name] = pd.arrays.IntegerArray(data, mask)
+            else:
+                if any(type(value) not in _LEDGER_INT_TYPES for value in values):
+                    raise TypeError("noncanonical ledger integer domain")
+                data = np.fromiter(values, dtype=np.int64, count=len(values))
+                # Match pandas' int64 -> int32 wrapping, including cast edges.
+                columns[name] = data.astype(np.int32) if name in ("src_id", "dst_id") else data
+    except (KeyError, OverflowError, ValueError, TypeError):
+        return reference_extract_message_trace(end_state)
+    return pd.DataFrame(columns, columns=MESSAGE_TRACE_COLUMNS)
+
+
 def simulate(config_path: str | Path, out_path: str | Path, baseline: bool = False) -> dict:
     started = time.perf_counter()
     scenario = json.loads(read_scenario(config_path))
@@ -280,7 +335,7 @@ def simulate(config_path: str | Path, out_path: str | Path, baseline: bool = Fal
         end_state = abides.run(config, log_dir=log_dir)
     simulated = time.perf_counter()
     trace = (reference_extract_trace if baseline else fast_extract_trace)(end_state)
-    message_trace = extract_message_trace(end_state)
+    message_trace = (reference_extract_message_trace if baseline else fast_extract_message_trace)(end_state)
     extracted = time.perf_counter()
     out_path = Path(out_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)

@@ -9,7 +9,13 @@ without recursively redispatching every scalar. Nested/mutable log values retain
 original deep-copy path. Version 003 computes the same end-of-market liquidity
 dropout metrics using tuple traversal instead of allocating a pandas Series for
 every book snapshot. It retains the original DataFrame coercion, arithmetic order,
-all records, and treatment of an unclosed final dropout. Independent batch markets
+all records, and treatment of an unclosed final dropout. Version 004 builds typed
+message-ledger columns directly
+while retaining delivered-message filtering, stable sequence order, broadcast keys,
+exact nullable nanosecond integers, and canonical Parquet schema/bytes. Unsupported
+input domains use the unchanged reference conversion. Local parity, all public
+markets, fresh seeds and a separate Linux comparison passed before this build.
+Independent batch markets
 run in at most four separate processes. No reference trace, pretrained model, API,
 GPU library or network request is used during simulation.
 

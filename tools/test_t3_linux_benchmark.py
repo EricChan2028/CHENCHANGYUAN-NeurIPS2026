@@ -16,7 +16,7 @@ import benchmark_t3_pair as bench
 def records(ratio=1.1):
     return [{**row, "events": 1000, "messages": 1100,
              "trace_sha256": "a" * 64, "message_trace_sha256": "b" * 64,
-             "process_seconds": 10.0 if row["mode"] == "v002" else 10.0 / ratio}
+             "process_seconds": 10.0 if row["mode"] == "v003" else 10.0 / ratio}
             for row in bench.schedule()]
 
 
@@ -24,14 +24,14 @@ class PairedBenchmarkTests(unittest.TestCase):
     def test_exact_balanced_fresh_container_roster(self):
         rows = bench.schedule()
         self.assertEqual(len(rows), 24)
-        self.assertEqual(sum(rows[i]["mode"] == "v002" for i in range(0, 24, 2)), 6)
+        self.assertEqual(sum(rows[i]["mode"] == "v003" for i in range(0, 24, 2)), 6)
         for i in range(0, 24, 2):
             self.assertEqual(rows[i]["case"], rows[i + 1]["case"])
             self.assertEqual(rows[i]["pair"], rows[i + 1]["pair"])
             self.assertEqual({rows[i]["mode"], rows[i + 1]["mode"]}, set(bench.MODES))
 
     def test_baseline_changes_only_readonly_source_mount(self):
-        inputs, outputs, baseline = Path("inputs"), Path("outputs"), Path("cpu_agent_v002.py")
+        inputs, outputs, baseline = Path("inputs"), Path("outputs"), Path("cpu_agent_v003.py")
         candidate = bench.docker_command("sha256:synthetic", inputs, outputs, "one")
         old = bench.docker_command("sha256:synthetic", inputs, outputs, "one", baseline)
         mount = f"type=bind,src={baseline.resolve()},dst=/app/cpu_agent.py,readonly"
@@ -75,7 +75,7 @@ class PairedBenchmarkTests(unittest.TestCase):
         rows = records()
         for row in rows:
             row["events"] = 1000 if row["case"] == bench.CASES[0] else 10
-            row["process_seconds"] = 1000 / 104 if row["case"] == bench.CASES[0] and row["mode"] == "v003" else 10
+            row["process_seconds"] = 1000 / 104 if row["case"] == bench.CASES[0] and row["mode"] == "v004" else 10
         result = bench.summarize(rows)
         self.assertAlmostEqual(result["equal_unit_mean_eps_ratio"], 107 / 103)
         self.assertTrue(result["promotion_passed"])
@@ -86,7 +86,7 @@ class PairedBenchmarkTests(unittest.TestCase):
         for case, ratio in ((bench.CASES[0], 0.89), (bench.CASES[2], 0.94)):
             rows = records(2.0)
             for row in rows:
-                if row["case"] == case and row["mode"] == "v003":
+                if row["case"] == case and row["mode"] == "v004":
                     row["process_seconds"] = 10 / ratio
             result = bench.summarize(rows)
             self.assertGreater(result["equal_unit_mean_eps_ratio"], 1.03)

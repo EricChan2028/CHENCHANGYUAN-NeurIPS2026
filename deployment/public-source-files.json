@@ -2,6 +2,14 @@
   "format_version": 1,
   "files": [
     {
+      "source": "deployment/push_public_image.py",
+      "destination": "deployment/push_public_image.py"
+    },
+    {
+      "source": "tools/test_public_image_push.py",
+      "destination": "tools/test_public_image_push.py"
+    },
+    {
       "source": "t3/cpu_agent_v003.py",
       "destination": "t3/cpu_agent_v003.py"
     },

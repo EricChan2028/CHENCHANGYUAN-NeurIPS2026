@@ -59,8 +59,8 @@ After every invocation, output files and their combined size must fit the publis
 64 MiB for T2 and 256 MiB for T3. The smoke resource budget above is deliberately smaller
 than the full T2 Final allowance; it is not a claim about the organizer's timing fleet.
 
-The v003 T3 candidate additionally runs 24 fresh Linux containers across four public
-scenarios, alternating against the frozen v002 source with identical dependencies.
+The v004 T3 candidate additionally runs 24 fresh Linux containers across four public
+scenarios, alternating against the frozen verified v003 source with identical dependencies.
 Every trace, ledger and event count must match. Publication requires at least a 3%
 increase in the equal-unit mean event rate, no larger-case regression beyond 5%, and
 no small-case regression beyond 10%, measured from three process times per version
@@ -82,6 +82,13 @@ OCI source and revision labels so GitHub can associate the package with this rep
 Only the automatically issued `GITHUB_TOKEN` is used (`contents: read`, `packages: write`);
 there is no personal token, Team Key, paid model API, cloud credential or OIDC setup.
 The tested image ID must equal the pushed image ID before its digest is recorded.
+Anonymous registry verification also binds the immutable manifest's config digest
+to that tested Docker image ID and checks its OCI source revision. Private upload
+checks require these bindings in addition to the completed runtime gates.
+The registry push helper retries the same image only for Docker's `unknown blob`
+failure, with at most three attempts ten seconds apart. Authentication failures,
+other errors and timeouts stop immediately. Competition uploads use the separate
+private receipt and reconciliation flow.
 
 **A newly published GHCR package may be private.** After first publication, check each
 package's settings and set its visibility to **Public**. The source label links the package

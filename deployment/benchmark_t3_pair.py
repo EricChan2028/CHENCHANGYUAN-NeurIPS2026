@@ -1,4 +1,4 @@
-"""Paired Linux CPU confirmation against frozen v002; this is not Final timing.
+"""Paired Linux CPU confirmation against frozen v003; this is not Final timing.
 
 The same inspected image supplies both runs' dependencies and vendor tree. Only
 the baseline's /app/cpu_agent.py is replaced by a read-only frozen source mount.
@@ -27,10 +27,10 @@ CASES = (
     "t3-mp05-cancel-churn-newest",
     "t3-gb-horizon-240s",
 )
-MODES = ("v002", "v003")
+MODES = ("v003", "v004")
 PAIRS = 3
-BASELINE_SHA256 = "d1b832f3e9fc3697da0c4b7d5620f8cfbef85fee7d624d85675730f8beb546fe"
-CANDIDATE_SHA256 = "b858c806e7a9209366a7b1a43718662305f619c227086b83ad33521500a61a6c"
+BASELINE_SHA256 = "b858c806e7a9209366a7b1a43718662305f619c227086b83ad33521500a61a6c"
+CANDIDATE_SHA256 = "f04b88e6c25c15c029857d3071ec2ea8817a9a18ab3e4c942f746f61084b93ad"
 GATES = {"equal_unit_mean_eps_ratio_min": 1.03,
          "larger_case_eps_ratio_min": 0.95,
          "small_case_eps_ratio_min": 0.90}
@@ -145,14 +145,14 @@ def summarize(records: list[dict]) -> dict:
         medians = {mode: statistics.median(r["process_seconds"] for r in rows if r["mode"] == mode)
                    for mode in MODES}
         rates = {mode: rows[0]["events"] / medians[mode] for mode in MODES}
-        ratio = rates["v003"] / rates["v002"]
+        ratio = rates["v004"] / rates["v003"]
         threshold = GATES["small_case_eps_ratio_min"] if case == CASES[0] else GATES["larger_case_eps_ratio_min"]
         cases.append({"case": case, "events": rows[0]["events"], "messages": rows[0]["messages"],
                       "stable_output_bytes": True, "median_process_seconds": medians,
                       "median_process_eps": rates, "eps_ratio": ratio,
                       "minimum_eps_ratio": threshold, "case_gate_passed": ratio >= threshold})
     means = {mode: statistics.mean(case["median_process_eps"][mode] for case in cases) for mode in MODES}
-    ratio = means["v003"] / means["v002"]
+    ratio = means["v004"] / means["v003"]
     passed = ratio >= GATES["equal_unit_mean_eps_ratio_min"] and all(case["case_gate_passed"] for case in cases)
     return {"cases": cases, "equal_unit_mean_eps": means, "equal_unit_mean_eps_ratio": ratio,
             "promotion_passed": passed}
@@ -179,10 +179,10 @@ def benchmark(image: str, work: Path, report_path: Path, baseline_source: Path,
         if not source.is_file() or source.is_symlink() or source.is_junction():
             raise ValueError("source must be an ordinary source file")
     if sha256(baseline_source) != BASELINE_SHA256:
-        raise ValueError("baseline source is not the frozen submitted v002")
+        raise ValueError("baseline source is not the frozen verified v003")
     candidate_hash = sha256(candidate_source)
     if candidate_hash != CANDIDATE_SHA256:
-        raise ValueError("candidate source is not the frozen v003 under confirmation")
+        raise ValueError("candidate source is not the frozen v004 under confirmation")
     # Verify the actual image contains the host candidate used to identify this
     # experiment. This read-only inspection is outside all timed paired runs.
     inspection_name = "agenthon-t3-source-" + uuid.uuid4().hex
@@ -211,11 +211,11 @@ def benchmark(image: str, work: Path, report_path: Path, baseline_source: Path,
               "rankable": False, "official_final_timing": False, "cpu_only": True,
               "status": "running", "promotion_passed": False,
               "started_at_utc": datetime.now(timezone.utc).isoformat(), "image_id": image_id,
-              "source_sha256": {"v002": BASELINE_SHA256, "v003": candidate_hash},
+              "source_sha256": {"v003": BASELINE_SHA256, "v004": candidate_hash},
               "source_revision": os.environ.get("GITHUB_SHA"), "config_sha256": config_hashes,
               "protocol": {"pairs_per_case": PAIRS, "schedule": schedule(), "gates": GATES,
                            "timing": "Fresh Docker CLI whole-process elapsed time, including startup and --rm; no warm-up discarded",
-                           "baseline": "Same image/entrypoint/vendor; frozen v002 file mounted read-only over /app/cpu_agent.py",
+                           "baseline": "Same image/entrypoint/vendor; frozen v003 file mounted read-only over /app/cpu_agent.py",
                            "case_metric": "events divided by median of three process times",
                            "aggregate": "equal arithmetic mean of four per-case EPS values",
                            "resources": "4 CPU quota, 8 GiB RAM/swap cap, 64 MiB tmpfs, no network/GPU, numeric threads=1, 300 seconds/run"},
@@ -225,12 +225,12 @@ def benchmark(image: str, work: Path, report_path: Path, baseline_source: Path,
     try:
         for row in schedule():
             case, pair, mode = row["case"], row["pair"], row["mode"]
-            if mode == "v002" and sha256(baseline_source) != BASELINE_SHA256:
+            if mode == "v003" and sha256(baseline_source) != BASELINE_SHA256:
                 raise ValueError("frozen baseline changed during the benchmark")
             output = output_root / "outputs" / case / f"{pair}-{mode}"
             log = output_root / "logs" / case / f"{pair}-{mode}.log"
             seconds = run_container(image_id, inputs[case], output, log,
-                                    baseline_source if mode == "v002" else None)
+                                    baseline_source if mode == "v003" else None)
             evidence = output_evidence(output, scenarios[case])
             # Fail immediately on a semantic mismatch rather than finish timing
             # an invalid candidate and possibly select a favourable subset.
@@ -261,7 +261,7 @@ def main() -> int:
     parser.add_argument("--image", required=True)
     parser.add_argument("--work", required=True, type=Path)
     parser.add_argument("--report", type=Path)
-    parser.add_argument("--baseline-source", type=Path, default=root / "t3/cpu_agent_v002.py")
+    parser.add_argument("--baseline-source", type=Path, default=root / "t3/cpu_agent_v003.py")
     parser.add_argument("--candidate-source", type=Path, default=root / "t3/cpu_agent.py")
     args = parser.parse_args()
     path = args.report or args.work / "t3-paired-report.json"
