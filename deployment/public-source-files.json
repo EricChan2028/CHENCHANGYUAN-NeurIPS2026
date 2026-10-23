@@ -2,6 +2,34 @@
   "format_version": 1,
   "files": [
     {
+      "source": "t3/cpu_agent_v004.py",
+      "destination": "t3/cpu_agent_v004.py"
+    },
+    {
+      "source": "t3/cpu_agent_v005_candidate.py",
+      "destination": "t3/cpu_agent_v005_candidate.py"
+    },
+    {
+      "source": "t3/verify_v005.py",
+      "destination": "t3/verify_v005.py"
+    },
+    {
+      "source": "deployment/benchmark_t3_v005.py",
+      "destination": "deployment/benchmark_t3_v005.py"
+    },
+    {
+      "source": "deployment/cpu-v005.yml",
+      "destination": "deployment/cpu-v005.yml"
+    },
+    {
+      "source": "tools/test_t3_v005_benchmark.py",
+      "destination": "tools/test_t3_v005_benchmark.py"
+    },
+    {
+      "source": "deployment/cpu-v005.yml",
+      "destination": ".github/workflows/cpu-v005.yml"
+    },
+    {
       "source": "deployment/profile_t3_v004.py",
       "destination": "deployment/profile_t3_v004.py"
     },
