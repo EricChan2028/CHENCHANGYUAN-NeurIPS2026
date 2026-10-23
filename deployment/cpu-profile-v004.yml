@@ -1,0 +1,46 @@
+name: T3 v004 immutable CPU profile
+
+on:
+  push:
+    branches: [t3-profile-v004]
+    paths:
+      - 'deployment/profile_t3_v004.py'
+      - 'deployment/cpu-profile-v004.yml'
+      - 'tools/test_t3_v004_profile.py'
+      - '.github/workflows/cpu-profile-v004.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: agenthon-t3-v004-diagnostic-profile
+  cancel-in-progress: false
+
+jobs:
+  profile:
+    # Public standard runners only; do not use paid private-repository minutes.
+    if: ${{ github.event.repository.private == false }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      CUDA_VISIBLE_DEVICES: ''
+      NVIDIA_VISIBLE_DEVICES: void
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      NUMEXPR_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.13'
+      - name: Test offline profile safeguards
+        run: python -m unittest discover -s tools -p test_t3_v004_profile.py -v
+      - name: Profile two public cases in the immutable v004 CPU image
+        run: |
+          set -euo pipefail
+          python deployment/profile_t3_v004.py --work .profile-t3-v004

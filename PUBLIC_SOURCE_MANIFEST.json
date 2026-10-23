@@ -4,6 +4,10 @@
       "bytes": 4191,
       "sha256": "e7422bec108e3f694ae6f177797fb6975a3b053a3827dd122e7fe769f9bccb98"
     },
+    ".github/workflows/cpu-profile-v004.yml": {
+      "bytes": 1411,
+      "sha256": "63a685c59ed8474d261c051d469c8d0d35207685cf37894c525b759b285da154"
+    },
     ".github/workflows/cpu-profile.yml": {
       "bytes": 1212,
       "sha256": "8949f1961df1bc9d6d7726823645662775d6ab864b87d2cb993703f9435347b7"
@@ -40,6 +44,10 @@
       "bytes": 4191,
       "sha256": "e7422bec108e3f694ae6f177797fb6975a3b053a3827dd122e7fe769f9bccb98"
     },
+    "deployment/cpu-profile-v004.yml": {
+      "bytes": 1411,
+      "sha256": "63a685c59ed8474d261c051d469c8d0d35207685cf37894c525b759b285da154"
+    },
     "deployment/cpu-profile.yml": {
       "bytes": 1212,
       "sha256": "8949f1961df1bc9d6d7726823645662775d6ab864b87d2cb993703f9435347b7"
@@ -52,13 +60,17 @@
       "bytes": 14975,
       "sha256": "bd73d7bd32490cb495131a1ea75e91acd55aed3c6849d5cce5de207ee84d64e2"
     },
+    "deployment/profile_t3_v004.py": {
+      "bytes": 16026,
+      "sha256": "c2969a6ca56facf40827d8105299483cbbb4593245b5d8bab2398fcde4489629"
+    },
     "deployment/public-gitignore": {
       "bytes": 125,
       "sha256": "4a0263609b68efa383c51ff75bb21ac056fabbd3074931da13f62eaede3cb97b"
     },
     "deployment/public-source-files.json": {
-      "bytes": 7616,
-      "sha256": "64243d7dc47f3d28bb3f1f3cebaef02d7716567c935686b0e7ceec25a70439de"
+      "bytes": 8107,
+      "sha256": "c82834820e5eecd5a1ac60db27cf57098b8d20a91cdc221457e456332540fd45"
     },
     "deployment/push_public_image.py": {
       "bytes": 3091,
@@ -259,6 +271,10 @@
     "tools/test_t3_v004_benchmark.py": {
       "bytes": 11212,
       "sha256": "be751890ec11bdc07f7b0381593500edfd62723dc3b3bfd39ed4997b48c2e0ce"
+    },
+    "tools/test_t3_v004_profile.py": {
+      "bytes": 14402,
+      "sha256": "14e21b579b12c3679ea058c17c50e93f843a64c4138f51df82e655e42d86391d"
     }
   },
   "format_version": 1,
