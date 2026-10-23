@@ -293,8 +293,31 @@ def simulate(histories: dict[str, pd.Series], horizons: list[int], target: str,
     return result, stats
 
 
+def select_draw_count(card: dict, requested: int | None, maximum_steps: int) -> int:
+    """Increase only the automatic Monte Carlo count within conservative resources."""
+    limits = ParseLimits()
+    params = card.get('scoring', {}).get('params', {})
+    minimum = max(limits.min_draws, int(params.get('n_draws_min', 0)))
+    if requested is not None:
+        draws = max(requested, minimum)
+    else:
+        targets = card['targets']
+        assets = len(targets['asset_ids'])
+        cells = assets * len(targets['horizons'])
+        proposal = max(8000, minimum)
+        eligible = (str(params.get('joint', 'variogram')) == 'variogram'
+                    and 0 < cells <= 20 and 0 < maximum_steps <= 5000
+                    and proposal * cells <= 160_000
+                    and proposal * cells * cells * 8 <= 32 * 1024 * 1024
+                    and proposal * assets * maximum_steps <= 4_000_000)
+        draws = max(8000 if eligible else 2000, minimum)
+    if draws > limits.max_draws:
+        raise ValueError('Too many draws for official contract')
+    return draws
+
+
 def run(panels: Path, text: Path, asof: str, out: Path, card_path: Path | None = None,
-        n_draws: int = 2000, seed: int = 773, method: str = 'adaptive', use_text: bool = False) -> dict:
+        n_draws: int | None = None, seed: int = 773, method: str = 'adaptive', use_text: bool = False) -> dict:
     if card_path is None:
         card_path = next((p for p in (panels / 'card.toml', panels.parent / 'card.toml') if p.is_file()), None)
     if card_path is None:
@@ -307,14 +330,15 @@ def run(panels: Path, text: Path, asof: str, out: Path, card_path: Path | None =
     target = targets['target_type']
     if target not in ('level', 'log_return'):
         raise ValueError(f'Unsupported target type: {target}')
-    limits = ParseLimits()
-    n_draws = max(n_draws, limits.min_draws, int(card.get('scoring', {}).get('params', {}).get('n_draws_min', 0)))
-    if n_draws > limits.max_draws:
-        raise ValueError('Too many draws for official contract')
     histories = read_histories(panels, assets, asof)
     spec_path = card_path.parent / 'forecast_spec.json'
     spec = json.loads(spec_path.read_text(encoding='utf-8')) if spec_path.exists() else {}
     grid = monthly_grid(histories, card, spec, asof)
+    maximum_steps = max(horizons)
+    if grid is not None:
+        origins = np.array([s.index[-1].to_period('M').ordinal for s in histories.values()])
+        maximum_steps = int(np.max(grid + (origins - origins.min())[:, None]))
+    n_draws = select_draw_count(card, n_draws, maximum_steps)
     evidence = text_risk(text, asof) if use_text else {'width_multiplier': 1.0, 'documents_read': 0, 'evidence': []}
     # Unit-specific stable seed is reproducible and has no knowledge of outcomes.
     salt = int.from_bytes(hashlib.sha256(card['task']['id'].encode()).digest()[:4], 'big')
@@ -374,7 +398,8 @@ def main() -> int:
     parser.add_argument('--asof', required=True)
     parser.add_argument('--out', type=Path, required=True)
     parser.add_argument('--card', type=Path)
-    parser.add_argument('--n-draws', type=int, default=2000)
+    parser.add_argument('--n-draws', type=int, default=None,
+                        help='Explicit draw count; omitted uses 8000 on resource-eligible grids, otherwise 2000')
     parser.add_argument('--seed', type=int, default=773)
     parser.add_argument('--method', choices=['adaptive', 'baseline'], default='adaptive')
     parser.add_argument('--text-risk', action='store_true', help='Experimental dated text overlay; disabled until independently validated')

@@ -12,6 +12,10 @@
       "bytes": 1212,
       "sha256": "8949f1961df1bc9d6d7726823645662775d6ab864b87d2cb993703f9435347b7"
     },
+    ".github/workflows/cpu-t2-v004.yml": {
+      "bytes": 3723,
+      "sha256": "5234e62ff52658620f4198df3720a934513b28222eab8315b3bd6480262eda92"
+    },
     ".github/workflows/cpu-v004.yml": {
       "bytes": 1384,
       "sha256": "31902a44aca82dc7cbc63aa672f0a428392dbc09955874cb3782fe90b5c35151"
@@ -60,6 +64,10 @@
       "bytes": 1212,
       "sha256": "8949f1961df1bc9d6d7726823645662775d6ab864b87d2cb993703f9435347b7"
     },
+    "deployment/cpu-t2-v004.yml": {
+      "bytes": 3723,
+      "sha256": "5234e62ff52658620f4198df3720a934513b28222eab8315b3bd6480262eda92"
+    },
     "deployment/cpu-v004.yml": {
       "bytes": 1384,
       "sha256": "31902a44aca82dc7cbc63aa672f0a428392dbc09955874cb3782fe90b5c35151"
@@ -81,8 +89,8 @@
       "sha256": "4a0263609b68efa383c51ff75bb21ac056fabbd3074931da13f62eaede3cb97b"
     },
     "deployment/public-source-files.json": {
-      "bytes": 8891,
-      "sha256": "9ce77eb0bc30d1d4d97112cdf27752df95fa78e489e4db05eb1652b97fda3acb"
+      "bytes": 9235,
+      "sha256": "7ccd94a013401450bbf1318c98a38061efa26bceb49ebb8a7399b389d486331f"
     },
     "deployment/push_public_image.py": {
       "bytes": 3091,
@@ -109,12 +117,12 @@
       "sha256": "72a6dae8870cbcd35329ff906cf00959bc027cb75200495df3a297c737c3d190"
     },
     "t2/PROVENANCE.md": {
-      "bytes": 1088,
-      "sha256": "8bbe739afd68acb3794ef10c2d5a47efb7e3699f5fce071bec268478dcffb54c"
+      "bytes": 1802,
+      "sha256": "ee5c6e4a99ed40594a1fb71cf5312b36dafb6ac0c9c091ba69e639e593c62112"
     },
     "t2/README.md": {
-      "bytes": 5546,
-      "sha256": "6183422cd0f8ef3415c31936c5e89c01030c9f4ee68f7c5b803f333e31c63b1f"
+      "bytes": 5632,
+      "sha256": "5cbad1962d7eae5931126cd1ea9f4b2d75a36d7b9d1e7507bc6e4760748f74b1"
     },
     "t2/create_fixture.py": {
       "bytes": 1759,
@@ -125,6 +133,10 @@
       "sha256": "1485096c31a2268ab165a7cbaeb46410fb7f135203e2902ae73e2c0bce09b74d"
     },
     "t2/forecast.py": {
+      "bytes": 22822,
+      "sha256": "de95f2edfeaa6f033a62973e234c67e1f4a73a2d31b7aee1f28896614b106601"
+    },
+    "t2/forecast_v002_final.py": {
       "bytes": 21566,
       "sha256": "ad16c1d3eee9e661f251a952788f75968d8c9078993e8a7e876979fb517cb770"
     },

@@ -13,3 +13,14 @@ are included in the image. Dependencies keep their own licenses.
 - The optional text uncertainty overlay is off by default because its gain has not been validated.
 - Windows runtime and output checks are local evidence. Linux image build, offline/read-only
   container checks and official input integrity gates remain necessary before submission.
+
+## Numerical sampling revision v004
+
+The forecast model and fitted parameters are unchanged from the verified Final v002
+baseline. The automatic sample count is 8,000 on bounded variogram grids, otherwise
+2,000; explicit requested counts and official/card minima remain enforced. The
+resource policy checks cells, rows, a variogram tensor estimate and simulation work.
+Optional energy scoring retains the prior automatic count because its sample
+pairwise computation is quadratic. Only input-only numerical dispersion and output
+admissibility were evaluated for this revision; no new realized outcome was read
+or scored. These checks do not establish improved forecast accuracy or rank.

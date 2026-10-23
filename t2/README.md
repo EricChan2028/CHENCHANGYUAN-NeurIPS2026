@@ -1,16 +1,12 @@
-## Executive summary (read this first)
+# Eastern Eagles T2 CPU forecasting
 
-This is Eastern Eagles' first CPU-only T2 candidate. It produces probabilistic
-forecasts for all 104 public cards with no model weights or API calls. It uses
-only supplied observations available by each card's cutoff.
-
-The unmodified official T2 gates-only CLI passes g0, g1, g2 and g3 for all 104
-artifacts. The official output schema and strict output parser also accept all
-104 artifacts, and seven local tests pass. The separate common input-manifest
-staging validation is blocked on Windows because its no-follow directory traversal
-requires Linux primitives.
-The Docker image has not yet been built or tested. Nothing here establishes a
-competition score or rank.
+The current v004 numerical revision preserves the verified v002 forecast model and
+parameters. It increases the automatic draw count only on resource-eligible grids.
+All 126 public input-only output gates and parsers pass; nine synthetic/policy tests
+pass, and three UST/FX/monthly repeat outputs are byte-identical. No new outcomes
+were scored. A dedicated Linux build validates the actual image before selection.
+Historical results below describe earlier model work and do not establish a Final
+score or rank.
 
 ### Run locally
 
@@ -27,8 +23,9 @@ From the campaign root in PowerShell:
 
 The `forecast` executable in the image implements the required interface. It
 writes `forecast.parquet`, `forecast_meta.json`, and `forecast_rationale.md` beside
-the requested output file. Default draw count is 2,000; card and contract floors
-are enforced. All output cells share coherent cross-asset and cross-horizon paths.
+the requested output file. Automatic draw count is 8,000 on bounded variogram grids and 2,000 otherwise;
+explicit --n-draws values and card/contract floors are enforced. Optional energy
+scoring and larger grids retain the earlier automatic count. All output cells share coherent cross-asset and cross-horizon paths.
 
 Run the official output gates without requesting nonexistent public outcomes:
 

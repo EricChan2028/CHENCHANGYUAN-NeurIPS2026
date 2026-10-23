@@ -1,0 +1,87 @@
+name: T2 v004 CPU build and public checks
+
+on:
+  push:
+    branches: [t2-numerical-v004]
+    paths:
+      - 't2/**'
+      - 'deployment/cpu-t2-v004.yml'
+      - 'deployment/container_smoke.py'
+      - 'deployment/validator-requirements.txt'
+      - 'deployment/push_public_image.py'
+      - 'deployment/verify_public_image.py'
+      - '.github/workflows/cpu-t2-v004.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: agenthon-t2-v004-cpu-image
+  cancel-in-progress: false
+
+jobs:
+  build:
+    # Allocate only a free standard public-repository runner on the dedicated branch.
+    if: ${{ github.event.repository.private == false && github.ref == 'refs/heads/t2-numerical-v004' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    env:
+      TRACK: t2
+      CUDA_VISIBLE_DEVICES: ''
+      NVIDIA_VISIBLE_DEVICES: void
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      NUMEXPR_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.13'
+      - name: Fetch pinned public validators and practice inputs on the host
+        run: |
+          set -euo pipefail
+          python deployment/container_smoke.py fetch --track "$TRACK" --work .ci
+          python -m pip install --no-cache-dir -r deployment/validator-requirements.txt
+          python -m pip install --no-cache-dir --no-deps ".ci/$TRACK"
+      - name: Build the CPU image from the allowlisted T2 context
+        run: |
+          set -euo pipefail
+          docker build --platform linux/amd64 \
+            --label "org.opencontainers.image.source=https://github.com/$GITHUB_REPOSITORY" \
+            --label "org.opencontainers.image.revision=$GITHUB_SHA" \
+            --tag "local/agenthon-$TRACK:$GITHUB_SHA" "$TRACK"
+      - name: Run the actual CLI offline and read-only with official public gates and output caps
+        run: |
+          set -euo pipefail
+          python deployment/container_smoke.py check --track "$TRACK" --work .ci --image "local/agenthon-$TRACK:$GITHUB_SHA"
+      - name: Publish only the tested image and record its immutable digest
+        if: ${{ success() }}
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          image="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/eastern-eagles-$TRACK:sha-$GITHUB_SHA"
+          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          trap 'docker logout ghcr.io >/dev/null 2>&1 || true' EXIT
+          docker tag "local/agenthon-$TRACK:$GITHUB_SHA" "$image"
+          python deployment/push_public_image.py "$image"
+          python deployment/container_smoke.py published --track "$TRACK" --work .ci --image "$image"
+      - name: Verify anonymous immutable manifest, config, every layer and a clean Docker pull
+        if: ${{ success() }}
+        run: |
+          set -euo pipefail
+          python deployment/verify_public_image.py ".ci/published-$TRACK.json"
+      - name: Report verified public image evidence
+        if: ${{ success() }}
+        run: |
+          printf '%s\n' '### T2 v004' 'CPU image passed public CLI, output-cap and anonymous-pull checks. This is not a private-test score or a competition submission.' >> "$GITHUB_STEP_SUMMARY"
+          printf '\n```json\n' >> "$GITHUB_STEP_SUMMARY"
+          cat ".ci/published-$TRACK.json" >> "$GITHUB_STEP_SUMMARY"
+          printf '\n```\n' >> "$GITHUB_STEP_SUMMARY"

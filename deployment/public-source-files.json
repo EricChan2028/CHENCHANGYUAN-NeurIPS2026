@@ -2,6 +2,18 @@
   "format_version": 1,
   "files": [
     {
+      "source": "t2/forecast_v002_final.py",
+      "destination": "t2/forecast_v002_final.py"
+    },
+    {
+      "source": "deployment/cpu-t2-v004.yml",
+      "destination": "deployment/cpu-t2-v004.yml"
+    },
+    {
+      "source": "deployment/cpu-t2-v004.yml",
+      "destination": ".github/workflows/cpu-t2-v004.yml"
+    },
+    {
       "source": "t3/cpu_agent_v004.py",
       "destination": "t3/cpu_agent_v004.py"
     },
