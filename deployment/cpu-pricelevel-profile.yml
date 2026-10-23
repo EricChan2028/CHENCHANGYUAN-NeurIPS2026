@@ -1,0 +1,44 @@
+name: T3 price-level two-pass CPU diagnostic
+
+on:
+  push:
+    branches: [t3-pricelevel-profile]
+    paths:
+      - 'deployment/profile_t3_pricelevel.py'
+      - 'deployment/cpu-pricelevel-profile.yml'
+      - 'tools/test_t3_pricelevel_profile.py'
+      - '.github/workflows/cpu-pricelevel-profile.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: agenthon-t3-pricelevel-diagnostic
+  cancel-in-progress: false
+
+jobs:
+  profile:
+    if: ${{ github.event.repository.private == false && github.ref == 'refs/heads/t3-pricelevel-profile' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      CUDA_VISIBLE_DEVICES: ''
+      NVIDIA_VISIBLE_DEVICES: void
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      NUMEXPR_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.13'
+      - name: Check exact targeting and pass separation offline
+        run: python -m unittest discover -s tools -p test_t3_pricelevel_profile.py -v
+      - name: Profile unwrapped getter then count lengths in separate frozen CPU containers
+        run: |
+          set -euo pipefail
+          python deployment/profile_t3_pricelevel.py --work .profile-pricelevel

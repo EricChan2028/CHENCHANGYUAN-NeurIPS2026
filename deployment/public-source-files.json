@@ -2,6 +2,22 @@
   "format_version": 1,
   "files": [
     {
+      "source": "deployment/profile_t3_pricelevel.py",
+      "destination": "deployment/profile_t3_pricelevel.py"
+    },
+    {
+      "source": "deployment/cpu-pricelevel-profile.yml",
+      "destination": "deployment/cpu-pricelevel-profile.yml"
+    },
+    {
+      "source": "deployment/cpu-pricelevel-profile.yml",
+      "destination": ".github/workflows/cpu-pricelevel-profile.yml"
+    },
+    {
+      "source": "tools/test_t3_pricelevel_profile.py",
+      "destination": "tools/test_t3_pricelevel_profile.py"
+    },
+    {
       "source": "t2/forecast_v002_final.py",
       "destination": "t2/forecast_v002_final.py"
     },
